@@ -6,338 +6,73 @@
 <title>Halftone Dots</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
-    --bg: #f0ede8;
-    --panel: #e8e4de;
-    --border: #ccc8c0;
-    --text: #1a1a1a;
-    --text-muted: #666;
-    --accent: #1a1a1a;
-    --btn-bg: #1a1a1a;
-    --btn-text: #f0ede8;
+    --bg: #f0ede8; --panel: #e8e4de; --border: #ccc8c0;
+    --text: #1a1a1a; --text-muted: #666;
     --font: 'Courier New', Courier, monospace;
   }
-
-  body {
-    font-family: var(--font);
-    background: var(--bg);
-    color: var(--text);
-    display: flex;
-    height: 100vh;
-    overflow: hidden;
-  }
-
-  /* SIDEBAR */
-  .sidebar {
-    width: 280px;
-    min-width: 280px;
-    background: var(--panel);
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    z-index: 10;
-  }
-
-  .sidebar-header {
-    padding: 16px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .sidebar-header a {
-    font-size: 11px;
-    text-decoration: none;
-    color: var(--text-muted);
-    letter-spacing: 0.05em;
-  }
-
-  .sidebar-header h1 {
-    font-size: 13px;
-    font-weight: normal;
-    margin-top: 4px;
-    letter-spacing: 0.02em;
-  }
-
-  /* UPLOAD */
-  .upload-area {
-    margin: 12px;
-    border: 1px dashed var(--border);
-    border-radius: 2px;
-    padding: 12px;
-    text-align: center;
-    cursor: pointer;
-    transition: background 0.15s;
-    position: relative;
-  }
-
+  body { font-family: var(--font); background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+  .sidebar { width: 280px; min-width: 280px; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; }
+  .sidebar-header { padding: 16px; border-bottom: 1px solid var(--border); }
+  .sidebar-header a { font-size: 11px; text-decoration: none; color: var(--text-muted); }
+  .sidebar-header h1 { font-size: 13px; font-weight: normal; margin-top: 4px; }
+  .upload-area { margin: 12px; border: 1px dashed var(--border); padding: 12px; text-align: center; cursor: pointer; position: relative; }
   .upload-area:hover { background: rgba(0,0,0,0.04); }
-
-  .upload-area input {
-    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
-  }
-
-  .upload-area .upload-label {
-    font-size: 12px;
-    font-weight: bold;
-    letter-spacing: 0.05em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-  }
-
-  .upload-area .upload-hint {
-    font-size: 10px;
-    color: var(--text-muted);
-    margin-top: 4px;
-  }
-
-  .shortcut {
-    font-size: 10px;
-    color: var(--text-muted);
-    background: rgba(0,0,0,0.08);
-    padding: 2px 5px;
-    border-radius: 2px;
-  }
-
-  /* CONTROLS */
-  .controls {
-    padding: 0 12px 12px;
-    flex: 1;
-  }
-
-  .control-row {
-    margin-top: 10px;
-  }
-
-  .control-label {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 11px;
-    margin-bottom: 4px;
-    color: var(--text);
-  }
-
-  .control-label span {
-    color: var(--text-muted);
-    font-size: 11px;
-    min-width: 28px;
-    text-align: right;
-  }
-
-  input[type="range"] {
-    width: 100%;
-    height: 2px;
-    -webkit-appearance: none;
-    background: var(--border);
-    outline: none;
-    cursor: pointer;
-  }
-
-  input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 10px;
-    height: 10px;
-    background: var(--text);
-    border-radius: 50%;
-    cursor: pointer;
-  }
-
-  .section-title {
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    margin: 16px 0 6px;
-    padding-bottom: 4px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-    user-select: none;
-  }
-
-  .section-title .toggle-icon {
-    font-size: 14px;
-    line-height: 1;
-  }
-
+  .upload-area input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-label { font-size: 12px; font-weight: bold; letter-spacing: 0.05em; }
+  .upload-hint { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+  .shortcut { font-size: 10px; color: var(--text-muted); background: rgba(0,0,0,0.08); padding: 2px 5px; border-radius: 2px; }
+  .controls { padding: 0 12px 12px; flex: 1; }
+  .control-row { margin-top: 10px; }
+  .control-label { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
+  .control-label span { color: var(--text-muted); }
+  input[type="range"] { width: 100%; height: 2px; -webkit-appearance: none; background: var(--border); outline: none; cursor: pointer; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; background: var(--text); border-radius: 50%; cursor: pointer; }
+  .section-title { font-size: 10px; letter-spacing: 0.1em; color: var(--text-muted); text-transform: uppercase; margin: 16px 0 6px; padding-bottom: 4px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; cursor: pointer; user-select: none; }
   .collapsible { overflow: hidden; transition: max-height 0.2s ease; }
   .collapsible.collapsed { max-height: 0 !important; }
-
-  /* SWITCHER */
-  .switcher {
-    display: flex;
-    gap: 4px;
-    margin-top: 10px;
-    align-items: center;
-  }
-
-  .switcher label {
-    font-size: 11px;
-    min-width: 70px;
-    flex-shrink: 0;
-  }
-
-  .switcher-btns {
-    display: flex;
-    border: 1px solid var(--border);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-
-  .switcher-btns button {
-    font-family: var(--font);
-    font-size: 11px;
-    padding: 3px 10px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    color: var(--text-muted);
-    transition: all 0.1s;
-  }
-
-  .switcher-btns button.active {
-    background: var(--text);
-    color: var(--bg);
-  }
-
-  /* TOGGLE */
-  .toggle-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 10px;
-    font-size: 11px;
-    cursor: pointer;
-  }
-
-  .toggle-box {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    font-size: 11px;
-    color: var(--text-muted);
-  }
-
-  .toggle-box input { display: none; }
-
-  .toggle-indicator {
-    width: 10px; height: 10px;
-    border: 1px solid var(--text);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 8px;
-  }
-
-  /* FOOTER */
-  .sidebar-footer {
-    padding: 12px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .format-switcher {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
+  .switcher { display: flex; gap: 4px; margin-top: 10px; align-items: center; }
+  .switcher label { font-size: 11px; min-width: 70px; }
+  .switcher-btns { display: flex; border: 1px solid var(--border); border-radius: 2px; overflow: hidden; }
+  .switcher-btns button { font-family: var(--font); font-size: 11px; padding: 3px 10px; background: transparent; border: none; cursor: pointer; color: var(--text-muted); }
+  .switcher-btns button.active { background: var(--text); color: var(--bg); }
+  .toggle-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 11px; cursor: pointer; }
+  .toggle-indicator { width: 10px; height: 10px; border: 1px solid var(--text); display: inline-flex; align-items: center; justify-content: center; font-size: 8px; }
+  .sidebar-footer { padding: 12px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+  .format-switcher { display: flex; align-items: center; gap: 8px; }
   .format-switcher label { font-size: 11px; }
-
-  .btn-export {
-    font-family: var(--font);
-    font-size: 12px;
-    background: var(--btn-bg);
-    color: var(--btn-text);
-    border: none;
-    padding: 10px 16px;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-radius: 2px;
-    letter-spacing: 0.03em;
-    transition: opacity 0.15s;
-  }
-
+  .btn-export { font-family: var(--font); font-size: 12px; background: var(--text); color: var(--bg); border: none; padding: 10px 16px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-radius: 2px; }
   .btn-export:hover { opacity: 0.85; }
-
-  /* CANVAS AREA */
-  .canvas-area {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    position: relative;
-    background: var(--bg);
-  }
-
-  #canvas {
-    display: block;
-    image-rendering: pixelated;
-  }
-
-  .drop-hint {
-    position: absolute;
-    text-align: center;
-    pointer-events: none;
-  }
-
-  .drop-hint p {
-    font-size: 13px;
-    color: var(--text-muted);
-    letter-spacing: 0.05em;
-  }
-
-  /* SCROLLBAR */
+  .canvas-area { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+  #canvas { display: block; }
+  .drop-hint { position: absolute; text-align: center; pointer-events: none; }
+  .drop-hint p { font-size: 13px; color: var(--text-muted); letter-spacing: 0.05em; }
   .sidebar::-webkit-scrollbar { width: 4px; }
-  .sidebar::-webkit-scrollbar-track { background: transparent; }
-  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-  @media (max-width: 600px) {
-    body { flex-direction: column; height: auto; overflow: auto; }
-    .sidebar { width: 100%; min-width: 0; border-right: none; border-bottom: 1px solid var(--border); }
-    .canvas-area { min-height: 300px; }
-  }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); }
 </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-header">
     <a href="#">/effects</a>
     <h1>[ dots ]</h1>
   </div>
 
-  <!-- Upload -->
   <div class="upload-area" id="uploadArea">
-    <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/gif">
+    <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp">
     <div class="upload-label">Upload media <span class="shortcut">cmd + O</span></div>
     <div class="upload-hint">[.jpg, .png, .webp]</div>
   </div>
 
   <div class="controls">
-
-    <!-- Canvas Size -->
     <div class="control-row">
       <div class="control-label">Canvas Size <span id="val-canvas-size">600</span></div>
       <input type="range" id="canvas-size" min="100" max="1000" step="10" value="600">
     </div>
 
-    <!-- Image Preprocessing -->
-    <div class="section-title" id="toggle-preprocess">
-      Image Preprocessing <span class="toggle-icon">−</span>
-    </div>
-    <div class="collapsible" id="section-preprocess" style="max-height: 500px;">
+    <div class="section-title" id="toggle-preprocess">Image Preprocessing <span class="toggle-icon">−</span></div>
+    <div class="collapsible" id="section-preprocess" style="max-height:500px">
       <div class="control-row">
         <div class="control-label">Blur <span id="val-blur">0</span></div>
         <input type="range" id="blur" min="0" max="10" step="1" value="0">
@@ -360,17 +95,13 @@
       </div>
     </div>
 
-    <!-- Show Effect toggle -->
     <div class="toggle-row" id="toggle-effect">
-      <div class="toggle-box">
-        <span>[</span>
-        <span class="toggle-indicator" id="effect-indicator">✓</span>
-        <span>]</span>
+      <div style="display:flex;align-items:center;gap:2px;font-size:11px;color:var(--text-muted)">
+        <span>[</span><span class="toggle-indicator" id="effect-indicator">✓</span><span>]</span>
       </div>
       <label>Show Effect</label>
     </div>
 
-    <!-- Effect controls -->
     <div class="control-row">
       <div class="control-label">Threshold <span id="val-threshold">128</span></div>
       <input type="range" id="threshold" min="0" max="255" step="1" value="128">
@@ -388,35 +119,28 @@
       <div class="control-label">Grid Angle <span id="val-grid-angle">0</span></div>
       <input type="range" id="grid-angle" min="-45" max="45" step="1" value="0">
     </div>
-
     <div class="control-row">
       <div class="control-label">Min Dot Size <span id="val-min-dot-size">1</span></div>
       <input type="range" id="min-dot-size" min="0" max="50" step="1" value="1">
     </div>
-
     <div class="control-row">
       <div class="control-label">Max Dot Size <span id="val-max-dot-size">10</span></div>
       <input type="range" id="max-dot-size" min="0" max="50" step="1" value="10">
     </div>
-
     <div class="control-row">
       <div class="control-label">Corner Radius <span id="val-corner-radius">4</span></div>
       <input type="range" id="corner-radius" min="0" max="20" step="1" value="4">
     </div>
-
     <div class="control-row">
       <div class="control-label">Step Size <span id="val-step-size">8</span></div>
       <input type="range" id="step-size" min="3" max="20" step="1" value="8">
     </div>
-
     <div class="control-row">
       <div class="control-label">Noise <span id="val-noise">2</span></div>
       <input type="range" id="noise" min="0" max="20" step="1" value="2">
     </div>
+  </div>
 
-  </div><!-- /controls -->
-
-  <!-- Footer -->
   <div class="sidebar-footer">
     <div class="format-switcher">
       <label>Output format</label>
@@ -425,24 +149,22 @@
         <button data-val="svg">SVG</button>
       </div>
     </div>
-    <button class="btn-export" id="btn-export">
-      Export canvas <span class="shortcut">cmd + S</span>
-    </button>
+    <button class="btn-export" id="btn-export">Export canvas <span class="shortcut">cmd + S</span></button>
   </div>
 </aside>
 
-<!-- CANVAS AREA -->
 <main class="canvas-area" id="canvasArea">
-  <div class="drop-hint" id="dropHint">
-    <p>Upload an image to get started</p>
-  </div>
+  <div class="drop-hint" id="dropHint"><p>Upload an image to get started</p></div>
   <canvas id="canvas"></canvas>
 </main>
 
 <script>
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
-const dropHint = document.getElementById('dropHint');
+
+// Offscreen canvas for pixel sampling
+const offscreen = document.createElement('canvas');
+const offCtx = offscreen.getContext('2d', { willReadFrequently: true });
 
 let sourceImg = null;
 let showEffect = true;
@@ -450,72 +172,47 @@ let gridType = 'regular';
 let outputFormat = 'png';
 let renderTimeout = null;
 
-// --- State ---
 const state = {
-  canvasSize: 600,
-  blur: 0,
-  grain: 0,
-  gamma: 1,
-  blackPoint: 0,
-  whitePoint: 255,
-  threshold: 128,
-  gridAngle: 0,
-  minDotSize: 1,
-  maxDotSize: 10,
-  cornerRadius: 4,
-  stepSize: 8,
-  noise: 2,
+  canvasSize: 600, blur: 0, grain: 0, gamma: 1,
+  blackPoint: 0, whitePoint: 255, threshold: 128,
+  gridAngle: 0, minDotSize: 1, maxDotSize: 10,
+  cornerRadius: 4, stepSize: 8, noise: 2
 };
 
-// --- Slider bindings ---
-const sliders = [
-  ['canvas-size',   'canvasSize'],
-  ['blur',          'blur'],
-  ['grain',         'grain'],
-  ['gamma',         'gamma'],
-  ['black-point',   'blackPoint'],
-  ['white-point',   'whitePoint'],
-  ['threshold',     'threshold'],
-  ['grid-angle',    'gridAngle'],
-  ['min-dot-size',  'minDotSize'],
-  ['max-dot-size',  'maxDotSize'],
-  ['corner-radius', 'cornerRadius'],
-  ['step-size',     'stepSize'],
-  ['noise',         'noise'],
-];
-
-sliders.forEach(([id, key]) => {
+// Bind sliders
+[
+  ['canvas-size','canvasSize'], ['blur','blur'], ['grain','grain'],
+  ['gamma','gamma'], ['black-point','blackPoint'], ['white-point','whitePoint'],
+  ['threshold','threshold'], ['grid-angle','gridAngle'],
+  ['min-dot-size','minDotSize'], ['max-dot-size','maxDotSize'],
+  ['corner-radius','cornerRadius'], ['step-size','stepSize'], ['noise','noise']
+].forEach(([id, key]) => {
   const el = document.getElementById(id);
-  const val = document.getElementById('val-' + id);
+  const vl = document.getElementById('val-' + id);
   el.addEventListener('input', () => {
     state[key] = parseFloat(el.value);
-    if (val) val.textContent = el.value;
+    if (vl) vl.textContent = el.value;
     scheduleRender();
   });
 });
 
-// --- Collapsible ---
+// Collapsible
 document.getElementById('toggle-preprocess').addEventListener('click', function() {
   const sec = document.getElementById('section-preprocess');
   const icon = this.querySelector('.toggle-icon');
-  if (sec.classList.contains('collapsed')) {
-    sec.classList.remove('collapsed');
-    sec.style.maxHeight = '500px';
-    icon.textContent = '−';
-  } else {
-    sec.classList.add('collapsed');
-    icon.textContent = '+';
-  }
+  sec.classList.toggle('collapsed');
+  icon.textContent = sec.classList.contains('collapsed') ? '+' : '−';
+  if (!sec.classList.contains('collapsed')) sec.style.maxHeight = '500px';
 });
 
-// --- Show effect toggle ---
+// Show effect toggle
 document.getElementById('toggle-effect').addEventListener('click', () => {
   showEffect = !showEffect;
   document.getElementById('effect-indicator').textContent = showEffect ? '✓' : ' ';
   scheduleRender();
 });
 
-// --- Switchers ---
+// Switchers
 document.querySelectorAll('.switcher-btns').forEach(group => {
   group.querySelectorAll('button').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -528,34 +225,16 @@ document.querySelectorAll('.switcher-btns').forEach(group => {
   });
 });
 
-// --- File upload ---
+// File input
 document.getElementById('fileInput').addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (file) loadFile(file);
+  if (e.target.files[0]) loadFile(e.target.files[0]);
 });
 
-document.getElementById('uploadArea').addEventListener('dragover', e => {
-  e.preventDefault();
-  document.getElementById('uploadArea').style.background = 'rgba(0,0,0,0.07)';
-});
-
-document.getElementById('uploadArea').addEventListener('dragleave', () => {
-  document.getElementById('uploadArea').style.background = '';
-});
-
-document.getElementById('uploadArea').addEventListener('drop', e => {
-  e.preventDefault();
-  document.getElementById('uploadArea').style.background = '';
-  const file = e.dataTransfer.files[0];
-  if (file && file.type.startsWith('image/')) loadFile(file);
-});
-
-// Drag onto canvas area
-document.getElementById('canvasArea').addEventListener('dragover', e => e.preventDefault());
-document.getElementById('canvasArea').addEventListener('drop', e => {
-  e.preventDefault();
-  const file = e.dataTransfer.files[0];
-  if (file && file.type.startsWith('image/')) loadFile(file);
+['dragover','drop'].forEach(ev => {
+  document.getElementById('canvasArea').addEventListener(ev, e => {
+    e.preventDefault();
+    if (ev === 'drop' && e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+  });
 });
 
 function loadFile(file) {
@@ -564,7 +243,7 @@ function loadFile(file) {
     const img = new Image();
     img.onload = () => {
       sourceImg = img;
-      dropHint.style.display = 'none';
+      document.getElementById('dropHint').style.display = 'none';
       scheduleRender();
     };
     img.src = ev.target.result;
@@ -572,37 +251,23 @@ function loadFile(file) {
   reader.readAsDataURL(file);
 }
 
-// --- Keyboard shortcuts ---
+// Keyboard shortcuts
 document.addEventListener('keydown', e => {
   const mod = e.metaKey || e.ctrlKey;
-  if (mod && e.key.toLowerCase() === 'o') {
-    e.preventDefault();
-    document.getElementById('fileInput').click();
-  }
-  if (mod && e.key.toLowerCase() === 's') {
-    e.preventDefault();
-    exportCanvas();
-  }
+  if (mod && e.key.toLowerCase() === 'o') { e.preventDefault(); document.getElementById('fileInput').click(); }
+  if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); doExport(); }
 });
 
-// --- Render pipeline ---
 function scheduleRender() {
   clearTimeout(renderTimeout);
-  renderTimeout = setTimeout(render, 30);
+  renderTimeout = setTimeout(render, 40);
 }
 
-function render() {
-  if (!sourceImg) return;
-
-  const size = state.canvasSize;
-  canvas.width = size;
-  canvas.height = size;
-
-  // Draw source image scaled to fill canvas
-  const offscreen = document.createElement('canvas');
+// ---- PREPARE IMAGE ----
+function prepareImage(size) {
   offscreen.width = size;
   offscreen.height = size;
-  const offCtx = offscreen.getContext('2d', { willReadFrequently: true });
+  offCtx.clearRect(0, 0, size, size);
 
   // Scale to cover
   const scale = Math.max(size / sourceImg.width, size / sourceImg.height);
@@ -611,144 +276,145 @@ function render() {
   const sx = (size - sw) / 2;
   const sy = (size - sh) / 2;
 
-  // Apply blur
-  if (state.blur > 0) {
-    offCtx.filter = `blur(${state.blur}px)`;
-  }
+  if (state.blur > 0) offCtx.filter = `blur(${state.blur}px)`;
   offCtx.drawImage(sourceImg, sx, sy, sw, sh);
   offCtx.filter = 'none';
 
-  // Apply grain
+  // Grain
   if (state.grain > 0) {
-    const imgData = offCtx.getImageData(0, 0, size, size);
-    const d = imgData.data;
-    for (let i = 0; i < d.length; i += 4) {
-      const noise = (Math.random() - 0.5) * state.grain * 255;
-      d[i]     = Math.min(255, Math.max(0, d[i]     + noise));
-      d[i + 1] = Math.min(255, Math.max(0, d[i + 1] + noise));
-      d[i + 2] = Math.min(255, Math.max(0, d[i + 2] + noise));
+    const d = offCtx.getImageData(0, 0, size, size);
+    for (let i = 0; i < d.data.length; i += 4) {
+      const n = (Math.random() - 0.5) * state.grain * 255;
+      d.data[i]   = Math.min(255, Math.max(0, d.data[i]   + n));
+      d.data[i+1] = Math.min(255, Math.max(0, d.data[i+1] + n));
+      d.data[i+2] = Math.min(255, Math.max(0, d.data[i+2] + n));
     }
-    offCtx.putImageData(imgData, 0, 0);
+    offCtx.putImageData(d, 0, 0);
   }
 
-  // Get pixel data for sampling
-  const imgData = offCtx.getImageData(0, 0, size, size);
-  const pixels = imgData.data;
+  return offCtx.getImageData(0, 0, size, size);
+}
+
+// ---- SAMPLE luminosity at (x, y) ----
+function sampleLum(pixels, x, y, size, bp, wp, gamma) {
+  const px = Math.round(x);
+  const py = Math.round(y);
+  if (px < 0 || px >= size || py < 0 || py >= size) return 255; // out of bounds = white
+  const i = (py * size + px) * 4;
+  let lum = pixels[i] * 0.299 + pixels[i+1] * 0.587 + pixels[i+2] * 0.114;
+  // Levels
+  lum = Math.min(255, Math.max(0, (lum - bp) / Math.max(1, wp - bp) * 255));
+  // Gamma
+  if (gamma !== 1) lum = 255 * Math.pow(lum / 255, gamma);
+  return lum;
+}
+
+// ---- DRAW ROUNDED RECT ----
+function drawDot(ctx, cx, cy, r, cr) {
+  const x = cx - r, y = cy - r, w = r * 2, h = r * 2;
+  const rx = Math.min(cr, r);
+  if (rx <= 0) {
+    ctx.rect(x, y, w, h);
+    return;
+  }
+  ctx.moveTo(x + rx, y);
+  ctx.lineTo(x + w - rx, y);
+  ctx.arcTo(x + w, y, x + w, y + rx, rx);
+  ctx.lineTo(x + w, y + h - rx);
+  ctx.arcTo(x + w, y + h, x + w - rx, y + h, rx);
+  ctx.lineTo(x + rx, y + h);
+  ctx.arcTo(x, y + h, x, y + h - rx, rx);
+  ctx.lineTo(x, y + rx);
+  ctx.arcTo(x, y, x + rx, y, rx);
+  ctx.closePath();
+}
+
+// ---- MAIN RENDER ----
+function render() {
+  if (!sourceImg) return;
+
+  const size = state.canvasSize;
+  canvas.width = size;
+  canvas.height = size;
 
   // White background
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, size, size);
 
+  const imageData = prepareImage(size);
+
   if (!showEffect) {
-    ctx.drawImage(offscreen, 0, 0);
+    ctx.putImageData(imageData, 0, 0);
     return;
   }
 
-  // Draw halftone
-  const step = state.stepSize;
-  const angle = state.gridAngle * Math.PI / 180;
-  const minR = state.minDotSize;
-  const maxR = state.maxDotSize;
-  const cr = state.cornerRadius;
-  const noiseAmt = state.noise;
-  const threshold = state.threshold;
-  const gamma = state.gamma;
-  const bp = state.blackPoint;
-  const wp = state.whitePoint;
+  const { stepSize: step, gridAngle, minDotSize, maxDotSize,
+          cornerRadius, noise, threshold, gamma, blackPoint, whitePoint } = state;
+
+  const angleRad = gridAngle * Math.PI / 180;
+  const cosA = Math.cos(-angleRad);
+  const sinA = Math.sin(-angleRad);
+  const pixels = imageData.data;
 
   ctx.fillStyle = '#000000';
   ctx.beginPath();
 
-  const cosA = Math.cos(angle);
-  const sinA = Math.sin(angle);
+  // We iterate over a rotated grid.
+  // For each grid cell, we rotate the cell center back to image space to sample,
+  // then draw the dot at the rotated position on canvas.
   const cx = size / 2;
   const cy = size / 2;
 
-  // Grid in rotated space, sample in original space
-  const diag = Math.ceil(Math.sqrt(2) * size);
-  const offset = (diag - size) / 2;
-  const cols = Math.ceil(diag / step) + 2;
-  const rows = Math.ceil(diag / step) + 2;
+  // Grid must cover the full canvas even when rotated
+  const diag = Math.ceil(Math.sqrt(2) * size) + step * 2;
+  const startX = cx - diag / 2;
+  const startY = cy - diag / 2;
+  const cols = Math.ceil(diag / step);
+  const rows = Math.ceil(diag / step);
 
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < cols; col++) {
-      // Position in rotated grid space
-      let gx = col * step - offset;
-      let gy = row * step - offset;
+  for (let row = 0; row <= rows; row++) {
+    for (let col = 0; col <= cols; col++) {
+      // Position in LOCAL grid space (centered at canvas center)
+      let localX = startX + col * step;
+      let localY = startY + row * step;
 
-      // Benday: offset every other row
-      if (gridType === 'benday' && row % 2 === 1) {
-        gx += step / 2;
-      }
+      // Benday: shift every other row
+      if (gridType === 'benday' && row % 2 === 1) localX += step / 2;
 
-      // Convert grid position to canvas position (rotate around center)
-      const rx = cx + (gx - cx) * cosA - (gy - cy) * sinA;
-      const ry = cy + (gx - cx) * sinA + (gy - cy) * cosA;
+      // Rotate the grid point around canvas center to get CANVAS draw position
+      const dx = localX - cx;
+      const dy = localY - cy;
+      const drawX = cx + dx * Math.cos(angleRad) - dy * Math.sin(angleRad);
+      const drawY = cy + dx * Math.sin(angleRad) + dy * Math.cos(angleRad);
 
-      // Sample from original image at canvas position
-      const px = Math.round(rx);
-      const py = Math.round(ry);
+      // Sample image at the UNROTATED position (localX, localY) — image is axis-aligned
+      const lum = sampleLum(pixels, localX, localY, size,
+                             blackPoint, whitePoint, gamma);
 
-      if (px < 0 || px >= size || py < 0 || py >= size) continue;
-
-      const idx = (py * size + px) * 4;
-      let lum = pixels[idx] * 0.299 + pixels[idx + 1] * 0.587 + pixels[idx + 2] * 0.114;
-
-      // Black point / white point
-      lum = Math.min(255, Math.max(0, (lum - bp) / Math.max(1, wp - bp) * 255));
-
-      // Gamma
-      if (gamma !== 1) lum = 255 * Math.pow(lum / 255, gamma);
-
-      // Skip pixels brighter than threshold
+      // Skip bright pixels
       if (lum > threshold) continue;
 
-      // Map: dark (0) → big dot, threshold → min dot
-      const t = lum / threshold;
-      const radius = maxR * (1 - t) + minR * t;
-
+      // Map darkness to dot size
+      const t = lum / threshold; // 0=dark=big, 1=threshold=min
+      const radius = maxDotSize * (1 - t) + minDotSize * t;
       if (radius < 0.5) continue;
 
-      // Noise displacement (applied to drawn position)
-      let dx = rx, dy = ry;
-      if (noiseAmt > 0) {
-        dx += (Math.random() - 0.5) * noiseAmt;
-        dy += (Math.random() - 0.5) * noiseAmt;
-      }
+      // Apply noise to draw position
+      const nx = noise > 0 ? drawX + (Math.random() - 0.5) * noise : drawX;
+      const ny = noise > 0 ? drawY + (Math.random() - 0.5) * noise : drawY;
 
-      const r = Math.min(cr, radius);
-      roundRect(ctx, dx - radius, dy - radius, radius * 2, radius * 2, r);
+      drawDot(ctx, nx, ny, radius, cornerRadius);
     }
   }
 
   ctx.fill();
 }
 
-function roundRect(ctx, x, y, w, h, r) {
-  if (r <= 0) {
-    ctx.rect(x, y, w, h);
-    return;
-  }
-  r = Math.min(r, w / 2, h / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.arcTo(x + w, y, x + w, y + r, r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
-  ctx.lineTo(x + r, y + h);
-  ctx.arcTo(x, y + h, x, y + h - r, r);
-  ctx.lineTo(x, y + r);
-  ctx.arcTo(x, y, x + r, y, r);
-  ctx.closePath();
-}
+// ---- EXPORT ----
+document.getElementById('btn-export').addEventListener('click', doExport);
 
-// --- Export ---
-document.getElementById('btn-export').addEventListener('click', exportCanvas);
-
-function exportCanvas() {
+function doExport() {
   if (!sourceImg) return;
-
   if (outputFormat === 'png') {
     const link = document.createElement('a');
     link.download = 'halftone-dots.png';
@@ -761,72 +427,48 @@ function exportCanvas() {
 
 function exportSVG() {
   const size = state.canvasSize;
-  const step = state.stepSize;
-  const angle = state.gridAngle * Math.PI / 180;
-  const noiseAmt = state.noise;
-  const threshold = state.threshold;
-  const gamma = state.gamma;
-  const bp = state.blackPoint;
-  const wp = state.whitePoint;
-  const minR = state.minDotSize;
-  const maxR = state.maxDotSize;
-  const cr = state.cornerRadius;
-
-  // Re-sample from offscreen
-  const offscreen = document.createElement('canvas');
-  offscreen.width = size;
-  offscreen.height = size;
-  const offCtx = offscreen.getContext('2d', { willReadFrequently: true });
-  const scale = Math.max(size / sourceImg.width, size / sourceImg.height);
-  const sw = sourceImg.width * scale;
-  const sh = sourceImg.height * scale;
-  offCtx.drawImage(sourceImg, (size - sw) / 2, (size - sh) / 2, sw, sh);
-  const imgData = offCtx.getImageData(0, 0, size, size);
-  const pixels = imgData.data;
-
+  const { stepSize: step, gridAngle, minDotSize, maxDotSize,
+          cornerRadius, noise, threshold, gamma, blackPoint, whitePoint } = state;
+  const angleRad = gridAngle * Math.PI / 180;
+  const imageData = prepareImage(size);
+  const pixels = imageData.data;
+  const cx = size / 2, cy = size / 2;
+  const diag = Math.ceil(Math.sqrt(2) * size) + step * 2;
+  const startX = cx - diag / 2, startY = cy - diag / 2;
+  const cols = Math.ceil(diag / step), rows = Math.ceil(diag / step);
   let shapes = '';
-  const diag = Math.ceil(Math.sqrt(2) * size);
-  const offset = (diag - size) / 2;
-  const cols = Math.ceil(diag / step) + 2;
-  const rows = Math.ceil(diag / step) + 2;
 
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < cols; col++) {
-      let gx = col * step - offset;
-      let gy = row * step - offset;
-      if (gridType === 'benday' && row % 2 === 1) gx += step / 2;
-      if (noiseAmt > 0) {
-        gx += (Math.random() - 0.5) * noiseAmt;
-        gy += (Math.random() - 0.5) * noiseAmt;
-      }
-      const px = Math.round(gx);
-      const py = Math.round(gy);
-      if (px < 0 || px >= size || py < 0 || py >= size) continue;
-      const idx = (py * size + px) * 4;
-      let lum = pixels[idx] * 0.299 + pixels[idx+1] * 0.587 + pixels[idx+2] * 0.114;
-      lum = Math.min(255, Math.max(0, (lum - bp) / (wp - bp) * 255));
-      if (gamma !== 1) lum = 255 * Math.pow(lum / 255, gamma);
+  for (let row = 0; row <= rows; row++) {
+    for (let col = 0; col <= cols; col++) {
+      let localX = startX + col * step;
+      let localY = startY + row * step;
+      if (gridType === 'benday' && row % 2 === 1) localX += step / 2;
+      const dx = localX - cx, dy = localY - cy;
+      const drawX = cx + dx * Math.cos(angleRad) - dy * Math.sin(angleRad);
+      const drawY = cy + dx * Math.sin(angleRad) + dy * Math.cos(angleRad);
+      const lum = sampleLum(pixels, localX, localY, size, blackPoint, whitePoint, gamma);
       if (lum > threshold) continue;
       const t = lum / threshold;
-      const radius = maxR - t * (maxR - minR);
-      if (radius <= 0) continue;
-      const r = Math.min(cr, radius);
-      if (r >= radius) {
-        shapes += `<circle cx="${gx.toFixed(1)}" cy="${gy.toFixed(1)}" r="${radius.toFixed(1)}"/>`;
+      const radius = maxDotSize * (1 - t) + minDotSize * t;
+      if (radius < 0.5) continue;
+      const nx = noise > 0 ? drawX + (Math.random()-0.5)*noise : drawX;
+      const ny = noise > 0 ? drawY + (Math.random()-0.5)*noise : drawY;
+      const rx = Math.min(cornerRadius, radius);
+      if (rx >= radius) {
+        shapes += `<circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="${radius.toFixed(1)}"/>`;
       } else {
-        const x = gx - radius, y = gy - radius, w = radius * 2, h = radius * 2;
-        shapes += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="${r.toFixed(1)}"/>`;
+        const x = (nx-radius).toFixed(1), y = (ny-radius).toFixed(1);
+        const w = (radius*2).toFixed(1);
+        shapes += `<rect x="${x}" y="${y}" width="${w}" height="${w}" rx="${rx.toFixed(1)}"/>`;
       }
     }
   }
 
-  const deg = state.gridAngle;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-  <rect width="${size}" height="${size}" fill="white"/>
-  <g transform="rotate(${deg} ${size/2} ${size/2})" fill="black">${shapes}</g>
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
+<rect width="${size}" height="${size}" fill="white"/>
+<g fill="black">${shapes}</g>
 </svg>`;
-
-  const blob = new Blob([svg], { type: 'image/svg+xml' });
+  const blob = new Blob([svg], {type:'image/svg+xml'});
   const link = document.createElement('a');
   link.download = 'halftone-dots.svg';
   link.href = URL.createObjectURL(blob);
