@@ -754,55 +754,100 @@ document.getElementById('input-h').addEventListener('change', e => {
 });
 
 // ---- MAIN RENDER ----
-function doRender() {
+let currentRenderID = 0;
+
+function yieldFrame() {
+  return new Promise(resolve => setTimeout(resolve, 0));
+}
+
+function getSafeStep(cw, ch, step) {
+  const size = Math.max(cw, ch);
+  const diag = Math.ceil(Math.sqrt(2) * size) + step * 4;
+  const MAX_CELLS = 60000;
+  let s = step;
+  while (true) {
+    const gw = Math.ceil(diag / s) + 2;
+    const gh = Math.ceil(diag / s) + 2;
+    if (gw * gh <= MAX_CELLS) break;
+    s++;
+  }
+  if (s !== step) {
+    S.stepSize = s;
+    const sl = document.getElementById('step-size');
+    const ni = document.getElementById('num-step-size');
+    if (sl) sl.value = s;
+    if (ni) ni.value = s;
+  }
+  const diag2 = Math.ceil(Math.sqrt(2) * size) + s * 4;
+  return { gw: Math.ceil(diag2/s)+2, gh: Math.ceil(diag2/s)+2, step: s };
+}
+
+async function doRender() {
   if (!sourceImg) return;
-  lastRenderTime = Date.now();
+  const myID = ++currentRenderID;
   spinner.classList.add('visible');
 
-  // Use requestAnimationFrame to not block UI
-  requestAnimationFrame(() => {
-    const size = Math.max(S.canvasW, S.canvasH); // largest dimension for grid calc
-    const step = S.stepSize;
-    const diag = Math.ceil(Math.sqrt(2)*size)+step*4;
-    const gw = Math.ceil(diag/step)+2;
-    const gh = Math.ceil(diag/step)+2;
+  await yieldFrame();
+  if (myID !== currentRenderID) return;
 
-    canvas.width = S.canvasW; canvas.height = S.canvasH;
-    ctx.fillStyle = '#fff'; ctx.fillRect(0,0,S.canvasW,S.canvasH);
+  const { gw, gh } = getSafeStep(S.canvasW, S.canvasH, S.stepSize);
 
-    if (!S.showEffect) {
-      off.width=S.canvasW; off.height=S.canvasH;
-      offCtx.fillStyle='#fff'; offCtx.fillRect(0,0,S.canvasW,S.canvasH);
-      const sc=Math.min(S.canvasW/sourceImg.width,S.canvasH/sourceImg.height); // contain
-      const sw=sourceImg.width*sc, sh=sourceImg.height*sc;
-      offCtx.drawImage(sourceImg,(S.canvasW-sw)/2,(S.canvasH-sh)/2,sw,sh);
-      ctx.drawImage(off,0,0);
-      spinner.classList.remove('visible');
-      return;
-    }
+  canvas.width = S.canvasW;
+  canvas.height = S.canvasH;
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, S.canvasW, S.canvasH);
 
-    const gray = prepareGray(gw2, gh2);
-    const mask = dither(gray, gw2, gh2);
-    const cells = collectCells(mask, gw2, gh2, S.canvasW, S.canvasH);
-    const r = S.shapeSize, cr = S.cornerRadius;
+  if (!S.showEffect) {
+    off.width = S.canvasW; off.height = S.canvasH;
+    offCtx.fillStyle = '#fff';
+    offCtx.fillRect(0, 0, S.canvasW, S.canvasH);
+    const sc = Math.min(S.canvasW / sourceImg.width, S.canvasH / sourceImg.height);
+    const sw = sourceImg.width * sc, sh = sourceImg.height * sc;
+    offCtx.drawImage(sourceImg, (S.canvasW-sw)/2, (S.canvasH-sh)/2, sw, sh);
+    ctx.drawImage(off, 0, 0);
+    spinner.classList.remove('visible');
+    return;
+  }
 
-    if (S.color === 'mono') {
+  const gray = prepareGray(gw, gh);
+  await yieldFrame(); if (myID !== currentRenderID) return;
+
+  const mask = dither(gray, gw, gh);
+  await yieldFrame(); if (myID !== currentRenderID) return;
+
+  const cells = collectCells(mask, gw, gh, S.canvasW, S.canvasH);
+  await yieldFrame(); if (myID !== currentRenderID) return;
+
+  const r = S.shapeSize, cr = S.cornerRadius;
+  const CHUNK = 1500;
+
+  if (S.color === 'mono') {
+    for (let i = 0; i < cells.length; i += CHUNK) {
+      if (myID !== currentRenderID) return;
       ctx.fillStyle = '#1a1a1a';
       ctx.beginPath();
-      cells.forEach(c => drawShape(ctx, c.shape, c.x, c.y, r, cr));
+      const end = Math.min(i + CHUNK, cells.length);
+      for (let j = i; j < end; j++) {
+        const c = cells[j];
+        drawShape(ctx, c.shape, c.x, c.y, r, cr);
+      }
       ctx.fill();
-    } else {
-      const byColor = {};
-      cells.forEach(c => { (byColor[c.color]=byColor[c.color]||[]).push(c); });
-      Object.entries(byColor).forEach(([col, group]) => {
-        ctx.fillStyle = col; ctx.beginPath();
-        group.forEach(c => drawShape(ctx, c.shape, c.x, c.y, r, cr));
-        ctx.fill();
-      });
+      await yieldFrame();
     }
+  } else {
+    const byColor = {};
+    cells.forEach(c => { (byColor[c.color] = byColor[c.color] || []).push(c); });
+    for (const [col, group] of Object.entries(byColor)) {
+      if (myID !== currentRenderID) return;
+      ctx.fillStyle = col;
+      ctx.beginPath();
+      group.forEach(c => drawShape(ctx, c.shape, c.x, c.y, r, cr));
+      ctx.fill();
+      await yieldFrame();
+    }
+  }
 
-    spinner.classList.remove('visible');
-  });
+  if (myID === currentRenderID) spinner.classList.remove('visible');
 }
 
 // ---- EXPORT ----
