@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Halftone Dots</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f0ede8;
+    --panel: #e8e4de;
+    --border: #ccc8c0;
+    --text: #1a1a1a;
+    --text-muted: #666;
+    --accent: #1a1a1a;
+    --btn-bg: #1a1a1a;
+    --btn-text: #f0ede8;
+    --font: 'Courier New', Courier, monospace;
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 280px;
+    min-width: 280px;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    z-index: 10;
+  }
+
+  .sidebar-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-header a {
+    font-size: 11px;
+    text-decoration: none;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+  }
+
+  .sidebar-header h1 {
+    font-size: 13px;
+    font-weight: normal;
+    margin-top: 4px;
+    letter-spacing: 0.02em;
+  }
+
+  /* UPLOAD */
+  .upload-area {
+    margin: 12px;
+    border: 1px dashed var(--border);
+    border-radius: 2px;
+    padding: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.15s;
+    position: relative;
+  }
+
+  .upload-area:hover { background: rgba(0,0,0,0.04); }
+
+  .upload-area input {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+
+  .upload-area .upload-label {
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .upload-area .upload-hint {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .shortcut {
+    font-size: 10px;
+    color: var(--text-muted);
+    background: rgba(0,0,0,0.08);
+    padding: 2px 5px;
+    border-radius: 2px;
+  }
+
+  /* CONTROLS */
+  .controls {
+    padding: 0 12px 12px;
+    flex: 1;
+  }
+
+  .control-row {
+    margin-top: 10px;
+  }
+
+  .control-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+
+  .control-label span {
+    color: var(--text-muted);
+    font-size: 11px;
+    min-width: 28px;
+    text-align: right;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    height: 2px;
+    -webkit-appearance: none;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 10px;
+    height: 10px;
+    background: var(--text);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  .section-title {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin: 16px 0 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .section-title .toggle-icon {
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  .collapsible { overflow: hidden; transition: max-height 0.2s ease; }
+  .collapsible.collapsed { max-height: 0 !important; }
+
+  /* SWITCHER */
+  .switcher {
+    display: flex;
+    gap: 4px;
+    margin-top: 10px;
+    align-items: center;
+  }
+
+  .switcher label {
+    font-size: 11px;
+    min-width: 70px;
+    flex-shrink: 0;
+  }
+
+  .switcher-btns {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .switcher-btns button {
+    font-family: var(--font);
+    font-size: 11px;
+    padding: 3px 10px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.1s;
+  }
+
+  .switcher-btns button.active {
+    background: var(--text);
+    color: var(--bg);
+  }
+
+  /* TOGGLE */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+
+  .toggle-box {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .toggle-box input { display: none; }
+
+  .toggle-indicator {
+    width: 10px; height: 10px;
+    border: 1px solid var(--text);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+  }
+
+  /* FOOTER */
+  .sidebar-footer {
+    padding: 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .format-switcher {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .format-switcher label { font-size: 11px; }
+
+  .btn-export {
+    font-family: var(--font);
+    font-size: 12px;
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    border: none;
+    padding: 10px 16px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 2px;
+    letter-spacing: 0.03em;
+    transition: opacity 0.15s;
+  }
+
+  .btn-export:hover { opacity: 0.85; }
+
+  /* CANVAS AREA */
+  .canvas-area {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    background: var(--bg);
+  }
+
+  #canvas {
+    display: block;
+    image-rendering: pixelated;
+  }
+
+  .drop-hint {
+    position: absolute;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  .drop-hint p {
+    font-size: 13px;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+  }
+
+  /* SCROLLBAR */
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  @media (max-width: 600px) {
+    body { flex-direction: column; height: auto; overflow: auto; }
+    .sidebar { width: 100%; min-width: 0; border-right: none; border-bottom: 1px solid var(--border); }
+    .canvas-area { min-height: 300px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <a href="#">/effects</a>
+    <h1>[ dots ]</h1>
+  </div>
+
+  <!-- Upload -->
+  <div class="upload-area" id="uploadArea">
+    <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/gif">
+    <div class="upload-label">Upload media <span class="shortcut">cmd + O</span></div>
+    <div class="upload-hint">[.jpg, .png, .webp]</div>
+  </div>
+
+  <div class="controls">
+
+    <!-- Canvas Size -->
+    <div class="control-row">
+      <div class="control-label">Canvas Size <span id="val-canvas-size">600</span></div>
+      <input type="range" id="canvas-size" min="100" max="1000" step="10" value="600">
+    </div>
+
+    <!-- Image Preprocessing -->
+    <div class="section-title" id="toggle-preprocess">
+      Image Preprocessing <span class="toggle-icon">−</span>
+    </div>
+    <div class="collapsible" id="section-preprocess" style="max-height: 500px;">
+      <div class="control-row">
+        <div class="control-label">Blur <span id="val-blur">0</span></div>
+        <input type="range" id="blur" min="0" max="10" step="1" value="0">
+      </div>
+      <div class="control-row">
+        <div class="control-label">Grain <span id="val-grain">0</span></div>
+        <input type="range" id="grain" min="0" max="1" step="0.01" value="0">
+      </div>
+      <div class="control-row">
+        <div class="control-label">Gamma <span id="val-gamma">1</span></div>
+        <input type="range" id="gamma" min="0.1" max="2" step="0.1" value="1">
+      </div>
+      <div class="control-row">
+        <div class="control-label">Black Point <span id="val-black-point">0</span></div>
+        <input type="range" id="black-point" min="0" max="255" step="1" value="0">
+      </div>
+      <div class="control-row">
+        <div class="control-label">White Point <span id="val-white-point">255</span></div>
+        <input type="range" id="white-point" min="0" max="255" step="1" value="255">
+      </div>
+    </div>
+
+    <!-- Show Effect toggle -->
+    <div class="toggle-row" id="toggle-effect">
+      <div class="toggle-box">
+        <span>[</span>
+        <span class="toggle-indicator" id="effect-indicator">✓</span>
+        <span>]</span>
+      </div>
+      <label>Show Effect</label>
+    </div>
+
+    <!-- Effect controls -->
+    <div class="control-row">
+      <div class="control-label">Threshold <span id="val-threshold">128</span></div>
+      <input type="range" id="threshold" min="0" max="255" step="1" value="128">
+    </div>
+
+    <div class="switcher">
+      <label>Grid Type</label>
+      <div class="switcher-btns" id="grid-type-switcher">
+        <button class="active" data-val="regular">Regular</button>
+        <button data-val="benday">Benday</button>
+      </div>
+    </div>
+
+    <div class="control-row">
+      <div class="control-label">Grid Angle <span id="val-grid-angle">0</span></div>
+      <input type="range" id="grid-angle" min="-45" max="45" step="1" value="0">
+    </div>
+
+    <div class="control-row">
+      <div class="control-label">Min Dot Size <span id="val-min-dot-size">1</span></div>
+      <input type="range" id="min-dot-size" min="0" max="50" step="1" value="1">
+    </div>
+
+    <div class="control-row">
+      <div class="control-label">Max Dot Size <span id="val-max-dot-size">10</span></div>
+      <input type="range" id="max-dot-size" min="0" max="50" step="1" value="10">
+    </div>
+
+    <div class="control-row">
+      <div class="control-label">Corner Radius <span id="val-corner-radius">4</span></div>
+      <input type="range" id="corner-radius" min="0" max="20" step="1" value="4">
+    </div>
+
+    <div class="control-row">
+      <div class="control-label">Step Size <span id="val-step-size">8</span></div>
+      <input type="range" id="step-size" min="3" max="20" step="1" value="8">
+    </div>
+
+    <div class="control-row">
+      <div class="control-label">Noise <span id="val-noise">2</span></div>
+      <input type="range" id="noise" min="0" max="20" step="1" value="2">
+    </div>
+
+  </div><!-- /controls -->
+
+  <!-- Footer -->
+  <div class="sidebar-footer">
+    <div class="format-switcher">
+      <label>Output format</label>
+      <div class="switcher-btns" id="format-switcher">
+        <button class="active" data-val="png">PNG</button>
+        <button data-val="svg">SVG</button>
+      </div>
+    </div>
+    <button class="btn-export" id="btn-export">
+      Export canvas <span class="shortcut">cmd + S</span>
+    </button>
+  </div>
+</aside>
+
+<!-- CANVAS AREA -->
+<main class="canvas-area" id="canvasArea">
+  <div class="drop-hint" id="dropHint">
+    <p>Upload an image to get started</p>
+  </div>
+  <canvas id="canvas"></canvas>
+</main>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
+const dropHint = document.getElementById('dropHint');
+
+let sourceImg = null;
+let showEffect = true;
+let gridType = 'regular';
+let outputFormat = 'png';
+let renderTimeout = null;
+
+// --- State ---
+const state = {
+  canvasSize: 600,
+  blur: 0,
+  grain: 0,
+  gamma: 1,
+  blackPoint: 0,
+  whitePoint: 255,
+  threshold: 128,
+  gridAngle: 0,
+  minDotSize: 1,
+  maxDotSize: 10,
+  cornerRadius: 4,
+  stepSize: 8,
+  noise: 2,
+};
+
+// --- Slider bindings ---
+const sliders = [
+  ['canvas-size',   'canvasSize'],
+  ['blur',          'blur'],
+  ['grain',         'grain'],
+  ['gamma',         'gamma'],
+  ['black-point',   'blackPoint'],
+  ['white-point',   'whitePoint'],
+  ['threshold',     'threshold'],
+  ['grid-angle',    'gridAngle'],
+  ['min-dot-size',  'minDotSize'],
+  ['max-dot-size',  'maxDotSize'],
+  ['corner-radius', 'cornerRadius'],
+  ['step-size',     'stepSize'],
+  ['noise',         'noise'],
+];
+
+sliders.forEach(([id, key]) => {
+  const el = document.getElementById(id);
+  const val = document.getElementById('val-' + id);
+  el.addEventListener('input', () => {
+    state[key] = parseFloat(el.value);
+    if (val) val.textContent = el.value;
+    scheduleRender();
+  });
+});
+
+// --- Collapsible ---
+document.getElementById('toggle-preprocess').addEventListener('click', function() {
+  const sec = document.getElementById('section-preprocess');
+  const icon = this.querySelector('.toggle-icon');
+  if (sec.classList.contains('collapsed')) {
+    sec.classList.remove('collapsed');
+    sec.style.maxHeight = '500px';
+    icon.textContent = '−';
+  } else {
+    sec.classList.add('collapsed');
+    icon.textContent = '+';
+  }
+});
+
+// --- Show effect toggle ---
+document.getElementById('toggle-effect').addEventListener('click', () => {
+  showEffect = !showEffect;
+  document.getElementById('effect-indicator').textContent = showEffect ? '✓' : ' ';
+  scheduleRender();
+});
+
+// --- Switchers ---
+document.querySelectorAll('.switcher-btns').forEach(group => {
+  group.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      group.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (group.id === 'grid-type-switcher') gridType = btn.dataset.val;
+      if (group.id === 'format-switcher') outputFormat = btn.dataset.val;
+      scheduleRender();
+    });
+  });
+});
+
+// --- File upload ---
+document.getElementById('fileInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (file) loadFile(file);
+});
+
+document.getElementById('uploadArea').addEventListener('dragover', e => {
+  e.preventDefault();
+  document.getElementById('uploadArea').style.background = 'rgba(0,0,0,0.07)';
+});
+
+document.getElementById('uploadArea').addEventListener('dragleave', () => {
+  document.getElementById('uploadArea').style.background = '';
+});
+
+document.getElementById('uploadArea').addEventListener('drop', e => {
+  e.preventDefault();
+  document.getElementById('uploadArea').style.background = '';
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) loadFile(file);
+});
+
+// Drag onto canvas area
+document.getElementById('canvasArea').addEventListener('dragover', e => e.preventDefault());
+document.getElementById('canvasArea').addEventListener('drop', e => {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) loadFile(file);
+});
+
+function loadFile(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      sourceImg = img;
+      dropHint.style.display = 'none';
+      scheduleRender();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// --- Keyboard shortcuts ---
+document.addEventListener('keydown', e => {
+  const mod = e.metaKey || e.ctrlKey;
+  if (mod && e.key.toLowerCase() === 'o') {
+    e.preventDefault();
+    document.getElementById('fileInput').click();
+  }
+  if (mod && e.key.toLowerCase() === 's') {
+    e.preventDefault();
+    exportCanvas();
+  }
+});
+
+// --- Render pipeline ---
+function scheduleRender() {
+  clearTimeout(renderTimeout);
+  renderTimeout = setTimeout(render, 30);
+}
+
+function render() {
+  if (!sourceImg) return;
+
+  const size = state.canvasSize;
+  canvas.width = size;
+  canvas.height = size;
+
+  // Draw source image scaled to fill canvas
+  const offscreen = document.createElement('canvas');
+  offscreen.width = size;
+  offscreen.height = size;
+  const offCtx = offscreen.getContext('2d', { willReadFrequently: true });
+
+  // Scale to cover
+  const scale = Math.max(size / sourceImg.width, size / sourceImg.height);
+  const sw = sourceImg.width * scale;
+  const sh = sourceImg.height * scale;
+  const sx = (size - sw) / 2;
+  const sy = (size - sh) / 2;
+
+  // Apply blur
+  if (state.blur > 0) {
+    offCtx.filter = `blur(${state.blur}px)`;
+  }
+  offCtx.drawImage(sourceImg, sx, sy, sw, sh);
+  offCtx.filter = 'none';
+
+  // Apply grain
+  if (state.grain > 0) {
+    const imgData = offCtx.getImageData(0, 0, size, size);
+    const d = imgData.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const noise = (Math.random() - 0.5) * state.grain * 255;
+      d[i]     = Math.min(255, Math.max(0, d[i]     + noise));
+      d[i + 1] = Math.min(255, Math.max(0, d[i + 1] + noise));
+      d[i + 2] = Math.min(255, Math.max(0, d[i + 2] + noise));
+    }
+    offCtx.putImageData(imgData, 0, 0);
+  }
+
+  // Get pixel data for sampling
+  const imgData = offCtx.getImageData(0, 0, size, size);
+  const pixels = imgData.data;
+
+  // White background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, size, size);
+
+  if (!showEffect) {
+    ctx.drawImage(offscreen, 0, 0);
+    return;
+  }
+
+  // Draw halftone
+  const step = state.stepSize;
+  const angle = state.gridAngle * Math.PI / 180;
+  const minR = state.minDotSize;
+  const maxR = state.maxDotSize;
+  const cr = state.cornerRadius;
+  const noiseAmt = state.noise;
+  const threshold = state.threshold;
+  const gamma = state.gamma;
+  const bp = state.blackPoint;
+  const wp = state.whitePoint;
+
+  ctx.save();
+  ctx.translate(size / 2, size / 2);
+  ctx.rotate(angle);
+  ctx.translate(-size / 2, -size / 2);
+
+  ctx.fillStyle = '#000000';
+
+  // Extended grid to cover after rotation
+  const diag = Math.ceil(Math.sqrt(2) * size);
+  const offset = (diag - size) / 2;
+
+  const cols = Math.ceil(diag / step) + 2;
+  const rows = Math.ceil(diag / step) + 2;
+
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      let gx = col * step - offset;
+      let gy = row * step - offset;
+
+      // Benday: offset every other row
+      if (gridType === 'benday' && row % 2 === 1) {
+        gx += step / 2;
+      }
+
+      // Noise displacement
+      if (noiseAmt > 0) {
+        gx += (Math.random() - 0.5) * noiseAmt;
+        gy += (Math.random() - 0.5) * noiseAmt;
+      }
+
+      // Sample pixel at this position
+      const px = Math.round(gx);
+      const py = Math.round(gy);
+
+      if (px < 0 || px >= size || py < 0 || py >= size) continue;
+
+      const idx = (py * size + px) * 4;
+      let lum = (pixels[idx] * 0.299 + pixels[idx + 1] * 0.587 + pixels[idx + 2] * 0.114);
+
+      // Black point / white point
+      lum = Math.min(255, Math.max(0, (lum - bp) / (wp - bp) * 255));
+
+      // Gamma
+      if (gamma !== 1) {
+        lum = 255 * Math.pow(lum / 255, gamma);
+      }
+
+      // Skip if above threshold (too bright)
+      if (lum > threshold) continue;
+
+      // Map luminosity to dot radius: dark=big, light=small
+      const t = lum / threshold; // 0 = dark, 1 = threshold
+      const radius = maxR - t * (maxR - minR);
+
+      if (radius <= 0) continue;
+
+      // Draw dot
+      const r = Math.min(cr, radius);
+      roundRect(ctx, gx - radius, gy - radius, radius * 2, radius * 2, r);
+    }
+  }
+
+  ctx.fill();
+  ctx.restore();
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  if (r <= 0) {
+    ctx.rect(x, y, w, h);
+    return;
+  }
+  r = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
+
+// --- Export ---
+document.getElementById('btn-export').addEventListener('click', exportCanvas);
+
+function exportCanvas() {
+  if (!sourceImg) return;
+
+  if (outputFormat === 'png') {
+    const link = document.createElement('a');
+    link.download = 'halftone-dots.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  } else {
+    exportSVG();
+  }
+}
+
+function exportSVG() {
+  const size = state.canvasSize;
+  const step = state.stepSize;
+  const angle = state.gridAngle * Math.PI / 180;
+  const noiseAmt = state.noise;
+  const threshold = state.threshold;
+  const gamma = state.gamma;
+  const bp = state.blackPoint;
+  const wp = state.whitePoint;
+  const minR = state.minDotSize;
+  const maxR = state.maxDotSize;
+  const cr = state.cornerRadius;
+
+  // Re-sample from offscreen
+  const offscreen = document.createElement('canvas');
+  offscreen.width = size;
+  offscreen.height = size;
+  const offCtx = offscreen.getContext('2d', { willReadFrequently: true });
+  const scale = Math.max(size / sourceImg.width, size / sourceImg.height);
+  const sw = sourceImg.width * scale;
+  const sh = sourceImg.height * scale;
+  offCtx.drawImage(sourceImg, (size - sw) / 2, (size - sh) / 2, sw, sh);
+  const imgData = offCtx.getImageData(0, 0, size, size);
+  const pixels = imgData.data;
+
+  let shapes = '';
+  const diag = Math.ceil(Math.sqrt(2) * size);
+  const offset = (diag - size) / 2;
+  const cols = Math.ceil(diag / step) + 2;
+  const rows = Math.ceil(diag / step) + 2;
+
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      let gx = col * step - offset;
+      let gy = row * step - offset;
+      if (gridType === 'benday' && row % 2 === 1) gx += step / 2;
+      if (noiseAmt > 0) {
+        gx += (Math.random() - 0.5) * noiseAmt;
+        gy += (Math.random() - 0.5) * noiseAmt;
+      }
+      const px = Math.round(gx);
+      const py = Math.round(gy);
+      if (px < 0 || px >= size || py < 0 || py >= size) continue;
+      const idx = (py * size + px) * 4;
+      let lum = pixels[idx] * 0.299 + pixels[idx+1] * 0.587 + pixels[idx+2] * 0.114;
+      lum = Math.min(255, Math.max(0, (lum - bp) / (wp - bp) * 255));
+      if (gamma !== 1) lum = 255 * Math.pow(lum / 255, gamma);
+      if (lum > threshold) continue;
+      const t = lum / threshold;
+      const radius = maxR - t * (maxR - minR);
+      if (radius <= 0) continue;
+      const r = Math.min(cr, radius);
+      if (r >= radius) {
+        shapes += `<circle cx="${gx.toFixed(1)}" cy="${gy.toFixed(1)}" r="${radius.toFixed(1)}"/>`;
+      } else {
+        const x = gx - radius, y = gy - radius, w = radius * 2, h = radius * 2;
+        shapes += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="${r.toFixed(1)}"/>`;
+      }
+    }
+  }
+
+  const deg = state.gridAngle;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+  <rect width="${size}" height="${size}" fill="white"/>
+  <g transform="rotate(${deg} ${size/2} ${size/2})" fill="black">${shapes}</g>
+</svg>`;
+
+  const blob = new Blob([svg], { type: 'image/svg+xml' });
+  const link = document.createElement('a');
+  link.download = 'halftone-dots.svg';
+  link.href = URL.createObjectURL(blob);
+  link.click();
+}
+</script>
+</body>
+</html>
