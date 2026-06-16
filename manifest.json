@@ -1,0 +1,18 @@
+{
+  "name": "Gioco-Geometry",
+  "short_name": "Gioco-Geo",
+  "description": "Image effects lab by GiocoStudio",
+  "start_url": "/Gioco-Geometry/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "logoHOME-GiocoGeometry.jpg",
+      "sizes": "any",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
