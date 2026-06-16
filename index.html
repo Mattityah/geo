@@ -116,21 +116,22 @@ button, input {
 
 .mode-switch {
   display: flex;
-  gap: 4px;
-  padding: 8px 10px;
+  gap: 3px;
+  padding: 6px 8px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   overflow-x: auto;
+  flex-wrap: wrap;
 }
 
 .mode-switch::-webkit-scrollbar { display: none; }
 
 .mode-btn {
   flex-shrink: 0;
-  font-size: 8px;
-  letter-spacing: .05em;
+  font-size: 7.5px;
+  letter-spacing: .04em;
   text-transform: uppercase;
-  padding: 5px 8px;
+  padding: 4px 7px;
   border: 1px solid var(--border);
   background: transparent;
   color: var(--muted);
@@ -156,11 +157,11 @@ button, input {
 
 .tab {
   flex: 1;
-  min-width: 62px;
-  font-size: 10px;
-  letter-spacing: 0.05em;
+  min-width: 46px;
+  font-size: 9px;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
-  padding: 6px 4px;
+  padding: 5px 3px;
   border: none;
   background: transparent;
   color: var(--muted);
@@ -551,53 +552,53 @@ input[type="range"]::-webkit-slider-thumb {
 
 /* MOBILE overrides */
 @media (max-width: 699px) {
-  /* Home screen: flex column, footer in flow */
   #home-screen {
     height: auto;
     min-height: 100dvh;
-    position: static; /* no absolute children on mobile */
+    position: static;
     justify-content: flex-start;
-    padding-top: max(40px, 6vh);
+    padding-top: max(28px, 3vh);
+    overflow-y: auto;
   }
 
   #home-logo {
-    max-height: 26vh;
-    margin-bottom: 16px;
+    max-height: 22vh;
+    margin-bottom: 12px;
   }
 
   #home-logo-placeholder {
-    height: 110px;
-    margin-bottom: 16px;
+    height: 90px;
+    margin-bottom: 12px;
   }
 
   #home-buttons {
     flex-direction: column;
     width: min(500px, 88vw);
-    gap: 7px;
+    gap: 6px;
     margin-bottom: 0;
   }
 
   .home-btn {
-    padding: 10px 14px;
+    padding: 9px 14px;
     flex-direction: row;
     justify-content: flex-start;
     gap: 14px;
   }
 
   .home-btn-label {
-    font-size: 12px;
-    letter-spacing: 0.18em;
+    font-size: 11px;
+    letter-spacing: 0.16em;
   }
 
   .home-btn-sub {
     text-align: left;
+    font-size: 8px;
   }
 
-  /* MOBILE footer: in normal flow at bottom of flex column */
   #home-footer {
     position: static;
     width: 100%;
-    margin-top: auto;
+    margin-top: 18px;
     padding: 12px 14px;
   }
 }
@@ -972,21 +973,45 @@ input[type="range"]::-webkit-slider-thumb {
         <button class="export-btn" id="btn-gfx-use-halftone" style="margin-top:12px">Use result in Halftone</button>
       </div>
 
+
       <div class="tab-content" id="tab-circuit">
-        <div class="tool-note">Circuit genera un patrón de PCB sobre tu imagen. La densidad de trazas sigue la luminosidad.</div>
+        <div class="tool-note">Circuit genera un patrón de PCB. La densidad de trazas sigue la luminosidad de la imagen.</div>
 
         <div class="toggle-row" id="toggle-circuit-effect"><div class="tog" id="circuit-effect-ind">&#10003;</div> Show Effect</div>
 
         <div class="section-title">Grid</div>
         <div class="row"><div class="row-top"><label>Cell Size</label><input type="number" id="num-circuit-cell" value="12" min="4" max="60" step="1"></div><input type="range" id="circuit-cell" min="4" max="60" step="1" value="12"></div>
+        <div class="row"><div class="row-top"><label>Density</label><input type="number" id="num-circuit-density" value="128" min="0" max="255" step="1"></div><input type="range" id="circuit-density" min="0" max="255" step="1" value="128"></div>
 
         <div class="section-title">Trazas</div>
-        <div class="row"><div class="row-top"><label>Density</label><input type="number" id="num-circuit-density" value="128" min="0" max="255" step="1"></div><input type="range" id="circuit-density" min="0" max="255" step="1" value="128"></div>
         <div class="row"><div class="row-top"><label>Trace Width</label><input type="number" id="num-circuit-width" value="2" min="1" max="8" step="1"></div><input type="range" id="circuit-width" min="1" max="8" step="1" value="2"></div>
         <div class="row"><div class="row-top"><label>Chaos</label><input type="number" id="num-circuit-chaos" value="30" min="0" max="100" step="1"></div><input type="range" id="circuit-chaos" min="0" max="100" step="1" value="30"></div>
 
         <div class="section-title">Nodos</div>
+        <div class="sw-row">
+          <span class="sw-label">Shape</span>
+          <div class="sw-btns" id="sw-circuit-node-shape">
+            <button class="sw-btn active" data-val="circle">&#9679;</button>
+            <button class="sw-btn" data-val="square">&#9632;</button>
+            <button class="sw-btn" data-val="cross">+</button>
+            <button class="sw-btn" data-val="diamond">&#9670;</button>
+            <button class="sw-btn" data-val="mix">Mix</button>
+          </div>
+        </div>
         <div class="row"><div class="row-top"><label>Node Size</label><input type="number" id="num-circuit-node" value="3" min="0" max="12" step="1"></div><input type="range" id="circuit-node" min="0" max="12" step="1" value="3"></div>
+
+        <div class="section-title">Componentes</div>
+        <div class="sw-row">
+          <span class="sw-label">Symbols</span>
+          <div class="sw-btns" id="sw-circuit-symbols">
+            <button class="sw-btn active" data-val="none">None</button>
+            <button class="sw-btn" data-val="resistor">R</button>
+            <button class="sw-btn" data-val="cap">C</button>
+            <button class="sw-btn" data-val="ic">IC</button>
+            <button class="sw-btn" data-val="all">All</button>
+          </div>
+        </div>
+        <div class="row"><div class="row-top"><label>Symbol Freq</label><input type="number" id="num-circuit-symfreq" value="15" min="1" max="50" step="1"></div><input type="range" id="circuit-symfreq" min="1" max="50" step="1" value="15"></div>
 
         <div class="section-title">Color</div>
         <div class="sw-row">
@@ -1096,6 +1121,9 @@ const S = {
   circuitWidth: 2,
   circuitChaos: 30,
   circuitNode: 3,
+  circuitNodeShape: 'circle',
+  circuitSymbols: 'none',
+  circuitSymfreq: 15,
   circuitColor: 'mono',
   gfxMode: 'destroy',
   gfxBlur: 4,
@@ -1150,7 +1178,7 @@ const CONTROL_MAP = [
   ['gfx-blob-expand','gfxBlobExpand'],
   ['circuit-cell','circuitCell'], ['circuit-density','circuitDensity'],
   ['circuit-width','circuitWidth'], ['circuit-chaos','circuitChaos'],
-  ['circuit-node','circuitNode'],
+  ['circuit-node','circuitNode'], ['circuit-symfreq','circuitSymfreq'],
   ['jpg-quality','jpgQuality']
 ];
 
@@ -1220,6 +1248,8 @@ makeSwitcher('sw-circuit-color', 'circuitColor', val => {
   $('circuit-palette-wrap').style.display = val === 'multi' ? 'block' : 'none';
   scheduleRender();
 });
+makeSwitcher('sw-circuit-node-shape', 'circuitNodeShape');
+makeSwitcher('sw-circuit-symbols', 'circuitSymbols');
 makeSwitcher('sw-gfx-mode', 'gfxMode', val => {
   $('gfx-destroy-params').style.display = val === 'destroy' ? 'block' : 'none';
   $('gfx-blob-params').style.display = val === 'blob' ? 'block' : 'none';
@@ -2782,7 +2812,7 @@ function svgForDithering() {
 
 // ---- EXPORT (FIX: always composite over white canvas) ----
 function getCircuitColors() {
-  if (S.circuitColor === 'invert') return { bg: '#1a1a1a', fg: '#ccff00' };
+  if (S.circuitColor === 'invert') return { bg: '#1a1a1a', fg: ['#ccff00'] };
   if (S.circuitColor === 'multi') {
     const swatches = [...document.querySelectorAll('#circuit-palette .swatch.active')];
     const cols = swatches.map(s => s.dataset.color);
@@ -2808,56 +2838,54 @@ async function renderCircuit(myID) {
   }
 
   const cell = Math.max(4, Math.round(S.circuitCell));
-  const cols = Math.ceil(cw / cell);
-  const rows = Math.ceil(ch / cell);
+  const gcols = Math.ceil(cw / cell);
+  const grows = Math.ceil(ch / cell);
 
-  // Sample image at grid resolution
-  const prep = prepareGray(cols, rows);
+  const prep = prepareGray(gcols, grows);
   const gray = prep.gray;
 
   const traceW = Math.max(1, Math.round(S.circuitWidth));
-  const nodeR = Math.max(0, Math.round(S.circuitNode));
+  const nodeR = Math.max(0, S.circuitNode);
   const chaos = S.circuitChaos / 100;
   const densityThresh = S.circuitDensity;
+  const nodeShape = S.circuitNodeShape;
+  const symbols = S.circuitSymbols;
+  const symFreq = Math.max(1, S.circuitSymfreq);
 
-  // Seeded pseudo-random for deterministic output
   function rand(seed) {
-    const x = Math.sin(seed + 1) * 43758.5453;
+    const x = Math.sin(seed * 127.1 + 1) * 43758.5453;
     return x - Math.floor(x);
   }
 
   function colorAt(col, row) {
-    if (Array.isArray(fg)) {
-      return fg[Math.abs(col * 7 + row * 13) % fg.length];
-    }
-    return fg;
+    return fg[Math.abs(col * 7 + row * 13) % fg.length];
   }
 
-  // Draw horizontal traces
+  function isActive(col, row) {
+    if (col < 0 || col >= gcols || row < 0 || row >= grows) return false;
+    return gray[row * gcols + col] <= densityThresh;
+  }
+
+  // ---- TRACES ----
   ctx.lineCap = 'square';
 
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < cols - 1; col++) {
-      const idx = row * cols + col;
-      const lum = gray[idx];
-      if (lum > densityThresh) continue;
-
-      // Chaos: skip some traces randomly
-      if (rand(idx * 3 + 1) < chaos * 0.6) continue;
+  for (let row = 0; row < grows; row++) {
+    for (let col = 0; col < gcols - 1; col++) {
+      const idx = row * gcols + col;
+      if (!isActive(col, row)) continue;
+      if (rand(idx * 3 + 1) < chaos * 0.55) continue;
 
       const x1 = col * cell + cell / 2;
       const x2 = (col + 1) * cell + cell / 2;
-      const y = row * cell + cell / 2;
-
-      // Occasional L-bend: go partway, jog vertically, continue
-      const doBend = rand(idx * 5 + 2) < chaos * 0.4;
+      const y  = row * cell + cell / 2;
 
       ctx.strokeStyle = colorAt(col, row);
       ctx.lineWidth = traceW;
       ctx.beginPath();
 
-      if (doBend && row + 1 < rows) {
-        const midX = x1 + (x2 - x1) * (0.3 + rand(idx) * 0.4);
+      // L-bend with occasional diagonal jog
+      if (rand(idx * 5 + 2) < chaos * 0.45 && row + 1 < grows) {
+        const midX = x1 + (x2 - x1) * (0.25 + rand(idx) * 0.5);
         const jog = (rand(idx * 2) > 0.5 ? 1 : -1) * cell;
         ctx.moveTo(x1, y);
         ctx.lineTo(midX, y);
@@ -2871,15 +2899,13 @@ async function renderCircuit(myID) {
     }
   }
 
-  // Draw vertical traces
-  for (let row = 0; row < rows - 1; row++) {
-    for (let col = 0; col < cols; col++) {
-      const idx = row * cols + col;
-      const lum = gray[idx];
-      if (lum > densityThresh) continue;
-      if (rand(idx * 3 + 7) < chaos * 0.5 + 0.2) continue; // vertical traces sparser
+  for (let row = 0; row < grows - 1; row++) {
+    for (let col = 0; col < gcols; col++) {
+      const idx = row * gcols + col;
+      if (!isActive(col, row)) continue;
+      if (rand(idx * 3 + 7) < chaos * 0.45 + 0.25) continue;
 
-      const x = col * cell + cell / 2;
+      const x  = col * cell + cell / 2;
       const y1 = row * cell + cell / 2;
       const y2 = (row + 1) * cell + cell / 2;
 
@@ -2895,48 +2921,169 @@ async function renderCircuit(myID) {
   await yieldFrame();
   if (myID !== currentRenderID) return;
 
-  // Draw nodes at intersections where traces meet
-  if (nodeR > 0) {
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        const idx = row * cols + col;
-        const lum = gray[idx];
-        if (lum > densityThresh) continue;
-        if (rand(idx * 11 + 3) > 0.45) continue; // ~45% of dark cells get a node
+  // ---- NODES ----
+  function drawNode(x, y, r, shape, color) {
+    if (r <= 0) return;
+    ctx.fillStyle = color;
+    ctx.strokeStyle = color;
 
+    const shapes = ['circle','square','cross','diamond'];
+    const s = shape === 'mix' ? shapes[Math.floor(rand(x * 0.1 + y * 0.07) * shapes.length)] : shape;
+
+    ctx.beginPath();
+    switch(s) {
+      case 'circle':
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      case 'square':
+        ctx.fillRect(x - r, y - r, r * 2, r * 2);
+        break;
+      case 'cross':
+        ctx.lineWidth = Math.max(1, r * 0.6);
+        ctx.lineCap = 'square';
+        ctx.moveTo(x - r, y); ctx.lineTo(x + r, y);
+        ctx.moveTo(x, y - r); ctx.lineTo(x, y + r);
+        ctx.stroke();
+        // Ring around cross
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.lineWidth = Math.max(1, traceW * 0.8);
+        ctx.stroke();
+        break;
+      case 'diamond':
+        ctx.moveTo(x, y - r);
+        ctx.lineTo(x + r, y);
+        ctx.lineTo(x, y + r);
+        ctx.lineTo(x - r, y);
+        ctx.closePath();
+        ctx.fill();
+        break;
+    }
+  }
+
+  if (nodeR > 0) {
+    for (let row = 0; row < grows; row++) {
+      for (let col = 0; col < gcols; col++) {
+        if (!isActive(col, row)) continue;
+        if (rand(col * 11 + row * 7 + 3) > 0.42) continue;
         const x = col * cell + cell / 2;
         const y = row * cell + cell / 2;
-
-        ctx.fillStyle = colorAt(col, row);
-        ctx.beginPath();
-        ctx.arc(x, y, nodeR, 0, Math.PI * 2);
-        ctx.fill();
+        drawNode(x, y, nodeR, nodeShape, colorAt(col, row));
       }
     }
   }
 
-  // Pads on border cells — small rectangles on edges
-  ctx.fillStyle = Array.isArray(fg) ? fg[0] : fg;
+  await yieldFrame();
+  if (myID !== currentRenderID) return;
+
+  // ---- COMPONENT SYMBOLS ----
+  function drawResistor(x, y, w, h, color) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(1, traceW * 0.8);
+    ctx.lineCap = 'square';
+    // Lead lines
+    ctx.beginPath();
+    ctx.moveTo(x, y + h / 2); ctx.lineTo(x + w * 0.2, y + h / 2);
+    ctx.moveTo(x + w * 0.8, y + h / 2); ctx.lineTo(x + w, y + h / 2);
+    ctx.stroke();
+    // Body rectangle
+    ctx.strokeRect(x + w * 0.2, y + h * 0.2, w * 0.6, h * 0.6);
+  }
+
+  function drawCapacitor(x, y, w, h, color) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(1, traceW * 0.8);
+    const mx = x + w / 2;
+    const gap = w * 0.08;
+    ctx.beginPath();
+    ctx.moveTo(x, y + h / 2); ctx.lineTo(mx - gap, y + h / 2);
+    ctx.moveTo(x + w, y + h / 2); ctx.lineTo(mx + gap, y + h / 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(mx - gap, y + h * 0.15); ctx.lineTo(mx - gap, y + h * 0.85);
+    ctx.moveTo(mx + gap, y + h * 0.15); ctx.lineTo(mx + gap, y + h * 0.85);
+    ctx.stroke();
+  }
+
+  function drawIC(x, y, w, h, color) {
+    ctx.strokeStyle = color;
+    ctx.fillStyle = bg;
+    ctx.lineWidth = Math.max(1, traceW * 0.8);
+    ctx.strokeRect(x, y, w, h);
+    ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
+    // Pins left & right
+    const pins = Math.max(2, Math.round(h / cell));
+    const pinSpacing = h / (pins + 1);
+    ctx.strokeStyle = color;
+    for (let p = 1; p <= pins; p++) {
+      const py = y + p * pinSpacing;
+      ctx.beginPath();
+      ctx.moveTo(x - cell * 0.5, py); ctx.lineTo(x, py);
+      ctx.moveTo(x + w, py); ctx.lineTo(x + w + cell * 0.5, py);
+      ctx.stroke();
+      // Small pad
+      ctx.fillStyle = color;
+      ctx.fillRect(x - cell * 0.5 - 1, py - 1, 3, 3);
+      ctx.fillRect(x + w + cell * 0.5 - 1, py - 1, 3, 3);
+    }
+    // Notch
+    ctx.strokeStyle = color;
+    ctx.beginPath();
+    ctx.arc(x + w / 2, y, cell * 0.25, 0, Math.PI);
+    ctx.stroke();
+  }
+
+  if (symbols !== 'none') {
+    const symTypes = symbols === 'all' ? ['resistor','cap','ic'] : [symbols];
+
+    for (let row = 1; row < grows - 1; row++) {
+      for (let col = 1; col < gcols - 1; col++) {
+        const idx = row * gcols + col;
+        if (!isActive(col, row)) continue;
+        if (rand(idx * 17 + 9) > (1 / symFreq)) continue;
+
+        const x = col * cell;
+        const y = row * cell;
+        const symType = symTypes[Math.floor(rand(idx * 3) * symTypes.length)];
+        const color = colorAt(col, row);
+
+        if (symType === 'resistor') {
+          drawResistor(x - cell * 0.5, y, cell * 2, cell, color);
+        } else if (symType === 'cap') {
+          drawCapacitor(x - cell * 0.5, y, cell * 2, cell, color);
+        } else if (symType === 'ic') {
+          const icW = cell * (2 + Math.floor(rand(idx) * 2));
+          const icH = cell * (2 + Math.floor(rand(idx * 2) * 3));
+          drawIC(x, y, icW, icH, color);
+        }
+      }
+    }
+  }
+
+  await yieldFrame();
+  if (myID !== currentRenderID) return;
+
+  // ---- BORDER PADS ----
   const padW = Math.max(2, traceW * 3);
-  const padH = Math.max(4, cell * 0.6);
-  for (let col = 0; col < cols; col += Math.max(1, Math.round(3 + rand(col) * 3))) {
-    // top border pad
-    if (gray[col] <= densityThresh) {
+  const padH = Math.max(3, Math.round(cell * 0.55));
+  for (let col = 0; col < gcols; col += Math.max(1, Math.round(2 + rand(col) * 3))) {
+    if (isActive(col, 0)) {
+      ctx.fillStyle = colorAt(col, 0);
       ctx.fillRect(col * cell + cell / 2 - padW / 2, 0, padW, padH);
     }
-    // bottom border pad
-    const bidx = (rows - 1) * cols + col;
-    if (gray[bidx] <= densityThresh) {
+    if (isActive(col, grows - 1)) {
+      ctx.fillStyle = colorAt(col, grows - 1);
       ctx.fillRect(col * cell + cell / 2 - padW / 2, ch - padH, padW, padH);
     }
   }
-  for (let row = 0; row < rows; row += Math.max(1, Math.round(3 + rand(row * 7) * 3))) {
-    // left pad
-    if (gray[row * cols] <= densityThresh) {
+  for (let row = 0; row < grows; row += Math.max(1, Math.round(2 + rand(row * 7) * 3))) {
+    if (isActive(0, row)) {
+      ctx.fillStyle = colorAt(0, row);
       ctx.fillRect(0, row * cell + cell / 2 - padW / 2, padH, padW);
     }
-    // right pad
-    if (gray[row * cols + cols - 1] <= densityThresh) {
+    if (isActive(gcols - 1, row)) {
+      ctx.fillStyle = colorAt(gcols - 1, row);
       ctx.fillRect(cw - padH, row * cell + cell / 2 - padW / 2, padH, padW);
     }
   }
@@ -2948,8 +3095,8 @@ function doExport() {
   if (!sourceImg) return;
 
   if (S.format === 'svg') {
-    if (S.mode === 'dots' || S.mode === 'solid') {
-      alert((S.mode === 'solid' ? 'SOLID' : 'DOTS') + ' exports as PNG/JPG only.');
+    if (['dots','solid','giocoeffect','circuit'].includes(S.mode)) {
+      alert(S.mode.toUpperCase() + ' exports as PNG/JPG only.');
       return;
     }
     const svg = S.mode === 'dithering' ? svgForDithering() : svgForHalftone();
@@ -2970,26 +3117,31 @@ function doExport() {
   const ec = exportCanvas.getContext('2d');
 
   if (S.format === 'jpg') {
-    // JPG no soporta transparencia: fondo blanco explícito
+    // JPG: white background
     ec.fillStyle = '#ffffff';
     ec.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
     ec.drawImage(canvas, 0, 0);
   } else {
-    // PNG: fondo transparente — extraer solo las formas como alfa
+    // PNG: transparent background
+    // Detect if current mode uses dark background
+    const darkBg = (S.mode === 'halftone' && S.color === 'invert') ||
+                   (S.mode === 'giocoeffect' && S.gfxColor === 'invert') ||
+                   (S.mode === 'circuit' && S.circuitColor === 'invert');
+
     ec.drawImage(canvas, 0, 0);
     const imgData = ec.getImageData(0, 0, exportCanvas.width, exportCanvas.height);
     const d = imgData.data;
-    if (S.color === 'invert') {
-      // Fondo negro, formas blancas → blanco opaco, negro transparente
+    if (darkBg) {
+      // Dark background: dark pixels → transparent, light → opaque
       for (let i = 0; i < d.length; i += 4) {
-        const lum = d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
-        d[i + 3] = Math.round(lum); // negro→0 (transparente), blanco→255 (opaco)
+        const lum = d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114;
+        d[i+3] = Math.round(lum);
       }
     } else {
-      // Fondo blanco, formas oscuras/color → blanco transparente, formas opacas
+      // Light background: white → transparent, dark/color → opaque
       for (let i = 0; i < d.length; i += 4) {
-        const lum = d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
-        d[i + 3] = Math.round(255 - lum); // blanco→0 (transparente), negro→255 (opaco)
+        const lum = d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114;
+        d[i+3] = Math.round(255 - lum);
       }
     }
     ec.putImageData(imgData, 0, 0);
