@@ -2106,85 +2106,62 @@ async function renderSolid(myID) {
     return;
   }
 
-  // --- LOW-RES PIPELINE ---
-  // Scale factor: strokeWeight controls how much we simplify (lower res = bigger/simpler shapes)
-  // Range: strokeWeight 0 = 40% res, strokeWeight 30 = 8% res
-  const scaleFactor = Math.max(0.06, 0.40 - (S.solidStrokeWeight / 30) * 0.34);
-  const lw = Math.max(20, Math.round(cw * scaleFactor));
-  const lh = Math.max(20, Math.round(ch * scaleFactor));
+  // Core idea: same as halftone with tiny step size.
+  // Divide image into a grid of cells. Each cell votes black or white
+  // based on average luminosity. Then scale up with interpolation + re-threshold.
+  // This naturally produces organic filled shapes without noise.
 
-  // 1. Draw source at low resolution
-  const loOff = document.createElement('canvas');
-  loOff.width = lw; loOff.height = lh;
-  const loCtx = loOff.getContext('2d', { willReadFrequently: true });
-  loCtx.fillStyle = '#ffffff';
-  loCtx.fillRect(0, 0, lw, lh);
-  loCtx.filter = 'blur(' + S.blur + 'px) contrast(' + S.contrast + ') brightness(' + S.brightness + ')';
-  const sc = Math.min(lw / sourceImg.width, lh / sourceImg.height) * (S.imgScale / 100);
-  loCtx.translate(lw / 2 + S.imgX * scaleFactor, lh / 2 + S.imgY * scaleFactor);
-  loCtx.rotate(S.imgRotation * Math.PI / 180);
-  loCtx.drawImage(sourceImg, -sourceImg.width * sc / 2, -sourceImg.height * sc / 2, sourceImg.width * sc, sourceImg.height * sc);
-  loCtx.restore && loCtx.restore();
-  loCtx.filter = 'none';
+  // Cell size: solidStrokeWeight maps 0→2px cells (fine) to 30→40px cells (coarse/blob)
+  const cellSize = Math.max(2, Math.round(2 + (S.solidStrokeWeight / 30) * 38));
 
-  const loData = loCtx.getImageData(0, 0, lw, lh).data;
-  const loGray = new Float32Array(lw * lh);
-  for (let i = 0; i < loGray.length; i++) {
-    const p = i * 4;
-    let l = loData[p] * 0.299 + loData[p+1] * 0.587 + loData[p+2] * 0.114;
-    if (S.gamma !== 1) l = 255 * Math.pow(l / 255, S.gamma);
-    loGray[i] = S.invert ? 255 - l : l;
+  const gw = Math.max(2, Math.ceil(cw / cellSize));
+  const gh = Math.max(2, Math.ceil(ch / cellSize));
+
+  // Sample source at grid resolution
+  const prep = prepareGray(gw, gh);
+  const gray = prep.gray;
+
+  // Each cell → black (1) or white (0) based on threshold
+  let cellMask = new Uint8Array(gw * gh);
+  for (let i = 0; i < gray.length; i++) {
+    cellMask[i] = gray[i] < S.solidThreshold ? 1 : 0;
   }
 
-  // 2. Threshold at low res → clean binary mask
-  let loMask = new Uint8Array(lw * lh);
-  for (let i = 0; i < loGray.length; i++) {
-    loMask[i] = loGray[i] < S.solidThreshold ? 1 : 0;
-  }
+  // Smooth at cell level to merge nearby dark regions
+  const smooth = Math.max(0, Math.round(S.solidSmooth));
+  for (let i = 0; i < smooth; i++) cellMask = majority(cellMask, gw, gh);
 
-  // 3. Morphological ops at low res (fast + effective)
-  if (S.solidMode === 'poster') {
-    // Posterize: multiple rounds of majority voting = region merging
-    for (let i = 0; i < 3; i++) loMask = majority(loMask, lw, lh);
-  } else if (S.solidMode !== 'line') {
-    // Fill mode: dilate slightly then smooth heavily to merge nearby regions
-    loMask = morph(loMask, lw, lh, 1, 'dilate');
-  }
-
-  // Smooth to merge small gaps and create organic shapes
-  const smooth = S.solidMode === 'line' ? 0 : Math.max(2, Math.round(S.solidSmooth));
-  for (let i = 0; i < smooth; i++) loMask = majority(loMask, lw, lh);
-
-  // Remove speckles at low res
+  // Remove isolated speckles
   const desp = Math.max(0, Math.round(S.solidDespeckle));
-  if (desp > 0) loMask = removeSpeckles(loMask, lw, lh, desp);
+  if (desp > 0) cellMask = removeSpeckles(cellMask, gw, gh, desp);
 
-  // Remove small isolated regions
-  const minArea = Math.max(1, Math.round(lw * lh * 0.002));
-  loMask = removeSmallRegions(loMask, lw, lh, minArea);
+  // Remove tiny regions
+  const minArea = Math.max(1, Math.round(gw * gh * 0.003));
+  cellMask = removeSmallRegions(cellMask, gw, gh, minArea);
 
   // Expand/erode
   const exp = Math.round(S.solidExpand);
-  if (exp > 0) loMask = morph(loMask, lw, lh, exp, 'dilate');
-  if (exp < 0) loMask = morph(loMask, lw, lh, Math.abs(exp), 'erode');
+  if (exp > 0) cellMask = morph(cellMask, gw, gh, exp, 'dilate');
+  if (exp < 0) cellMask = morph(cellMask, gw, gh, Math.abs(exp), 'erode');
 
-  // 4. Paint low-res mask to a small canvas
-  const maskSmall = document.createElement('canvas');
-  maskSmall.width = lw; maskSmall.height = lh;
-  const mCtx = maskSmall.getContext('2d');
-  const mImg = mCtx.createImageData(lw, lh);
-  for (let i = 0; i < loMask.length; i++) {
-    const v = loMask[i] ? 0 : 255;
+  // Paint cell mask to small canvas
+  const small = document.createElement('canvas');
+  small.width = gw; small.height = gh;
+  const sCtx = small.getContext('2d');
+  const sImg = sCtx.createImageData(gw, gh);
+  for (let i = 0; i < cellMask.length; i++) {
+    const v = cellMask[i] ? 0 : 255;
     const p = i * 4;
-    mImg.data[p] = v; mImg.data[p+1] = v; mImg.data[p+2] = v; mImg.data[p+3] = 255;
+    sImg.data[p] = v; sImg.data[p+1] = v; sImg.data[p+2] = v; sImg.data[p+3] = 255;
   }
-  mCtx.putImageData(mImg, 0, 0);
+  sCtx.putImageData(sImg, 0, 0);
 
-  // 5. Scale up to full canvas — browser bilinear interpolation creates smooth edges
-  ctx.drawImage(maskSmall, 0, 0, cw, ch);
+  // Scale up with bilinear interpolation → smooth organic edges
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(small, 0, 0, cw, ch);
 
-  // 6. Re-threshold at full res: converts the smooth gray gradient edges into
-  //    clean hard black/white — gives the "vector fill" look
+  // Re-threshold: gradient edges → clean hard black/white
   const fullData = ctx.getImageData(0, 0, cw, ch);
   const fd = fullData.data;
   for (let i = 0; i < fd.length; i += 4) {
