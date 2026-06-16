@@ -6,7 +6,7 @@
 
 ## About
 
-Gioco-Geometry is a creative tool for transforming images into geometric and algorithmic compositions — halftone grids, CRT screen simulations, ASCII art, and more. Everything runs directly in the browser, no installation required.
+Gioco-Geometry is a creative tool for transforming images into geometric and algorithmic compositions — halftone grids,screen simulations, ASCII art, and more. Everything runs directly in the browser, no installation required.
 
 The app is built around the idea that technology should serve creativity, not the other way around. Upload an image, explore the parameters, export what you find.
 
@@ -14,7 +14,7 @@ The app is built around the idea that technology should serve creativity, not th
 
 ## Origin
 
-This project is part of **GiocoStudio** — a space dedicated to exploration and the making of things. *Gioco* is Italian for *play*, and that spirit is at the center of everything here: the belief that through play and curiosity, technology becomes a tool for expression rather than a barrier to it.
+This project is part of **GiocoStudio** — a space dedicated to exploration and the making of things. *Gioco* is that spirit is at the center of everything here: the belief that through play and curiosity, technology becomes a tool for expression rather than a barrier to it.
 
 Gioco-Geometry grew out of that philosophy — the desire to build tools that are genuinely useful, visually interesting, and open to experimentation.
 
