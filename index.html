@@ -24,7 +24,7 @@
   --text: #1a1a1a;
   --muted: #888;
   --font: 'Courier New', monospace;
-  --panel-h: 48vh;
+  --panel-h: 58vh;
 }
 
 html, body {
@@ -669,7 +669,7 @@ input[type="range"]::-webkit-slider-thumb {
     </div>
 
     <div class="panel" id="panel">
-      <button id="panel-toggle" title="Ocultar/mostrar panel">&#8250;</button>
+      <button id="panel-toggle" title="Ocultar/mostrar panel">&#8249;</button>
       <div class="handle" id="handle"></div>
 
       <div class="mode-switch">
@@ -938,6 +938,7 @@ input[type="range"]::-webkit-slider-thumb {
           <div class="sw-btns" id="sw-gfx-mode">
             <button class="sw-btn active" data-val="destroy">Destroy</button>
             <button class="sw-btn" data-val="blob">Blob</button>
+            <button class="sw-btn" data-val="beads">Beads</button>
           </div>
         </div>
 
@@ -964,6 +965,36 @@ input[type="range"]::-webkit-slider-thumb {
           <div class="row"><div class="row-top"><label>Smooth</label><input type="number" id="num-gfx-blob-smooth" value="4" min="0" max="12" step="1"></div><input type="range" id="gfx-blob-smooth" min="0" max="12" step="1" value="4"></div>
           <div class="row"><div class="row-top"><label>Despeckle</label><input type="number" id="num-gfx-blob-despeckle" value="2" min="0" max="12" step="1"></div><input type="range" id="gfx-blob-despeckle" min="0" max="12" step="1" value="2"></div>
           <div class="row"><div class="row-top"><label>Expand</label><input type="number" id="num-gfx-blob-expand" value="0" min="-8" max="8" step="1"></div><input type="range" id="gfx-blob-expand" min="-8" max="8" step="1" value="0"></div>
+        </div>
+
+        <div id="gfx-beads-params" style="display:none">
+          <div class="section-title">Grilla</div>
+          <div class="sw-row">
+            <span class="sw-label">Shape</span>
+            <div class="sw-btns" id="sw-beads-shape">
+              <button class="sw-btn active" data-val="diamond">&#9670;</button>
+              <button class="sw-btn" data-val="circle">&#9679;</button>
+              <button class="sw-btn" data-val="square">&#9632;</button>
+              <button class="sw-btn" data-val="hex">Hex</button>
+            </div>
+          </div>
+          <div class="row"><div class="row-top"><label>Bead Size</label><input type="number" id="num-beads-size" value="10" min="4" max="40" step="1"></div><input type="range" id="beads-size" min="4" max="40" step="1" value="10"></div>
+          <div class="row"><div class="row-top"><label>Gap</label><input type="number" id="num-beads-gap" value="1" min="0" max="6" step="1"></div><input type="range" id="beads-gap" min="0" max="6" step="1" value="1"></div>
+
+          <div class="section-title">Color</div>
+          <div class="sw-row">
+            <span class="sw-label">Palette</span>
+            <div class="sw-btns" id="sw-beads-color">
+              <button class="sw-btn active" data-val="source">Source</button>
+              <button class="sw-btn" data-val="mono">Mono</button>
+              <button class="sw-btn" data-val="palette">Palette</button>
+            </div>
+          </div>
+          <div class="row"><div class="row-top"><label>Tones</label><input type="number" id="num-beads-tones" value="8" min="2" max="32" step="1"></div><input type="range" id="beads-tones" min="2" max="32" step="1" value="8"></div>
+          <div id="beads-palette-wrap" style="display:none">
+            <div style="font-size:11px;margin-bottom:6px">Palette</div>
+            <div class="palette" id="beads-palette"></div>
+          </div>
         </div>
 
         <div class="section-title">Color</div>
@@ -1018,8 +1049,8 @@ input[type="range"]::-webkit-slider-thumb {
             <button class="sw-btn" data-val="both">Both</button>
           </div>
         </div>
-        <div class="row"><div class="row-top"><label>Bus Width</label><input type="number" id="num-circuit-bus-width" value="4" min="2" max="16" step="1"></div><input type="range" id="circuit-bus-width" min="2" max="16" step="1" value="4"></div>
-        <div class="row"><div class="row-top"><label>Break %</label><input type="number" id="num-circuit-break" value="20" min="0" max="80" step="1"></div><input type="range" id="circuit-break" min="0" max="80" step="1" value="20"></div>
+        <div class="row"><div class="row-top"><label>Line Width</label><input type="number" id="num-circuit-bus-width" value="2" min="1" max="8" step="1"></div><input type="range" id="circuit-bus-width" min="1" max="8" step="1" value="2"></div>
+        <div class="row"><div class="row-top"><label>Gap %</label><input type="number" id="num-circuit-break" value="20" min="0" max="80" step="1"></div><input type="range" id="circuit-break" min="0" max="80" step="1" value="20"></div>
 
         <div class="section-title">Componentes</div>
         <div class="sw-row">
@@ -1035,6 +1066,32 @@ input[type="range"]::-webkit-slider-thumb {
           </div>
         </div>
         <div class="row"><div class="row-top"><label>Symbol Freq</label><input type="number" id="num-circuit-symfreq" value="15" min="1" max="50" step="1"></div><input type="range" id="circuit-symfreq" min="1" max="50" step="1" value="15"></div>
+
+        <div class="section-title">Fragmentación</div>
+        <div class="sw-row">
+          <span class="sw-label">Mode</span>
+          <div class="sw-btns" id="sw-circuit-frag">
+            <button class="sw-btn active" data-val="none">None</button>
+            <button class="sw-btn" data-val="text">Text</button>
+            <button class="sw-btn" data-val="blocks">Blocks</button>
+            <button class="sw-btn" data-val="mix">Mix</button>
+          </div>
+        </div>
+        <div id="circuit-frag-params" style="display:none">
+          <div class="row"><div class="row-top"><label>Cell Size</label><input type="number" id="num-circuit-frag-cell" value="32" min="8" max="120" step="4"></div><input type="range" id="circuit-frag-cell" min="8" max="120" step="4" value="32"></div>
+          <div class="row"><div class="row-top"><label>Displace X</label><input type="number" id="num-circuit-disp-x" value="0" min="-100" max="100" step="1"></div><input type="range" id="circuit-disp-x" min="-100" max="100" step="1" value="0"></div>
+          <div class="row"><div class="row-top"><label>Displace Y</label><input type="number" id="num-circuit-disp-y" value="0" min="-100" max="100" step="1"></div><input type="range" id="circuit-disp-y" min="-100" max="100" step="1" value="0"></div>
+          <div class="row"><div class="row-top"><label>Chaos</label><input type="number" id="num-circuit-frag-chaos" value="40" min="0" max="100" step="1"></div><input type="range" id="circuit-frag-chaos" min="0" max="100" step="1" value="40"></div>
+          <div class="sw-row">
+            <span class="sw-label">Charset</span>
+            <div class="sw-btns" id="sw-circuit-charset">
+              <button class="sw-btn active" data-val="elec">Ω μ Φ</button>
+              <button class="sw-btn" data-val="alpha">A-Z</button>
+              <button class="sw-btn" data-val="num">0-9</button>
+              <button class="sw-btn" data-val="mix">Mix</button>
+            </div>
+          </div>
+        </div>
 
         <div class="section-title">Color</div>
         <div class="sw-row">
@@ -1148,7 +1205,7 @@ const S = {
   circuitSymbols: 'none',
   circuitSymfreq: 15,
   circuitBus: 'none',
-  circuitBusWidth: 4,
+  circuitBusWidth: 2,
   circuitBreak: 20,
   circuitColor: 'mono',
   gfxMode: 'destroy',
@@ -1164,6 +1221,18 @@ const S = {
   gfxBlobSmooth: 4,
   gfxBlobDespeckle: 2,
   gfxBlobExpand: 0,
+  beadsShape: 'diamond',
+  beadsSize: 10,
+  beadsGap: 1,
+  beadsColor: 'source',
+  beadsTones: 8,
+
+  circuitFrag: 'none',
+  circuitFragCell: 32,
+  circuitDispX: 0,
+  circuitDispY: 0,
+  circuitFragChaos: 40,
+  circuitCharset: 'elec',
 
   format: 'png',
   jpgQuality: 92
@@ -1202,10 +1271,13 @@ const CONTROL_MAP = [
   ['gfx-blob-size','gfxBlobSize'], ['gfx-blob-threshold','gfxBlobThreshold'],
   ['gfx-blob-smooth','gfxBlobSmooth'], ['gfx-blob-despeckle','gfxBlobDespeckle'],
   ['gfx-blob-expand','gfxBlobExpand'],
+  ['beads-size','beadsSize'], ['beads-gap','beadsGap'], ['beads-tones','beadsTones'],
   ['circuit-cell','circuitCell'], ['circuit-density','circuitDensity'],
   ['circuit-width','circuitWidth'], ['circuit-chaos','circuitChaos'],
   ['circuit-node','circuitNode'], ['circuit-symfreq','circuitSymfreq'],
   ['circuit-bus-width','circuitBusWidth'], ['circuit-break','circuitBreak'],
+  ['circuit-frag-cell','circuitFragCell'], ['circuit-disp-x','circuitDispX'],
+  ['circuit-disp-y','circuitDispY'], ['circuit-frag-chaos','circuitFragChaos'],
   ['jpg-quality','jpgQuality']
 ];
 
@@ -1281,8 +1353,19 @@ makeSwitcher('sw-circuit-bus', 'circuitBus');
 makeSwitcher('sw-gfx-mode', 'gfxMode', val => {
   $('gfx-destroy-params').style.display = val === 'destroy' ? 'block' : 'none';
   $('gfx-blob-params').style.display = val === 'blob' ? 'block' : 'none';
+  $('gfx-beads-params').style.display = val === 'beads' ? 'block' : 'none';
   scheduleRender();
 });
+makeSwitcher('sw-beads-shape', 'beadsShape');
+makeSwitcher('sw-beads-color', 'beadsColor', val => {
+  $('beads-palette-wrap').style.display = val === 'palette' ? 'block' : 'none';
+  scheduleRender();
+});
+makeSwitcher('sw-circuit-frag', 'circuitFrag', val => {
+  $('circuit-frag-params').style.display = val !== 'none' ? 'block' : 'none';
+  scheduleRender();
+});
+makeSwitcher('sw-circuit-charset', 'circuitCharset');
 makeSwitcher('sw-format', 'format', val => {
   $('jpg-quality-wrap').style.display = val === 'jpg' ? 'block' : 'none';
 });
@@ -1435,14 +1518,30 @@ function buildCircuitPalette() {
     sw.className = 'swatch active';
     sw.style.background = color;
     sw.dataset.color = color;
-    sw.addEventListener('click', () => {
-      sw.classList.toggle('active');
-      scheduleRender();
-    });
+    sw.addEventListener('click', () => { sw.classList.toggle('active'); scheduleRender(); });
     c.appendChild(sw);
   });
 }
 buildCircuitPalette();
+
+function buildBeadsPalette() {
+  const c = $('beads-palette');
+  // Extended bead palette — more colors like real Hama beads
+  const BEAD_COLORS = [
+    '#1a1a1a','#ffffff','#e63946','#f4a261','#e9c46a',
+    '#2a9d8f','#264653','#457b9d','#a8dadc','#8ecae6',
+    '#c77dff','#d4a5a5','#6d4c41','#a5c4d4','#f6bd60'
+  ];
+  BEAD_COLORS.forEach(color => {
+    const sw = document.createElement('div');
+    sw.className = 'swatch active';
+    sw.style.background = color;
+    sw.dataset.color = color;
+    sw.addEventListener('click', () => { sw.classList.toggle('active'); scheduleRender(); });
+    c.appendChild(sw);
+  });
+}
+buildBeadsPalette();
 
 $('fileInput').addEventListener('change', e => {
   if (e.target.files[0]) loadFile(e.target.files[0]);
@@ -2668,6 +2767,121 @@ async function renderGiocoEffect(myID) {
     return;
   }
 
+  // ---- BEADS MODE: isometric diamond/bead grid ----
+  if (S.gfxMode === 'beads') {
+    const bSize = Math.max(4, Math.round(S.beadsSize));
+    const gap = Math.max(0, Math.round(S.beadsGap));
+    const r = bSize / 2 - gap / 2;
+    const tones = Math.max(2, Math.round(S.beadsTones));
+    const shape = S.beadsShape;
+
+    // For isometric layout: rows offset by half
+    const rowH = bSize * 0.866; // sin(60°) — hexagonal vertical step
+    const cols2 = Math.ceil(cw / bSize) + 2;
+    const rows2 = Math.ceil(ch / rowH) + 2;
+
+    // Sample source image at full res for color picking
+    const srcOff = document.createElement('canvas');
+    srcOff.width = cw; srcOff.height = ch;
+    const sCtx2 = srcOff.getContext('2d', { willReadFrequently: true });
+    drawSourceToCanvas(srcOff, sCtx2, cw, ch);
+    const srcData = sCtx2.getImageData(0, 0, cw, ch).data;
+
+    function sampleColor(px, py) {
+      const sx = Math.max(0, Math.min(cw - 1, Math.round(px)));
+      const sy = Math.max(0, Math.min(ch - 1, Math.round(py)));
+      const i = (sy * cw + sx) * 4;
+      return [srcData[i], srcData[i+1], srcData[i+2]];
+    }
+
+    function closestBeadColor(r2, g2, b2) {
+      if (S.beadsColor === 'mono') {
+        const lum = Math.round((r2 * 0.299 + g2 * 0.587 + b2 * 0.114) / 255 * (tones - 1)) / (tones - 1) * 255;
+        return `rgb(${lum},${lum},${lum})`;
+      }
+      if (S.beadsColor === 'palette') {
+        const swatches = [...document.querySelectorAll('#beads-palette .swatch.active')];
+        if (!swatches.length) return `rgb(${r2},${g2},${b2})`;
+        let best = swatches[0].dataset.color, bestD = 1e9;
+        swatches.forEach(sw => {
+          const c = sw.dataset.color;
+          const pr2 = parseInt(c.slice(1,3),16), pg2 = parseInt(c.slice(3,5),16), pb2 = parseInt(c.slice(5,7),16);
+          const d = (r2-pr2)**2 + (g2-pg2)**2 + (b2-pb2)**2;
+          if (d < bestD) { bestD = d; best = c; }
+        });
+        return best;
+      }
+      // Source: quantize to tones
+      const qr = Math.round(r2 / 255 * (tones-1)) / (tones-1) * 255;
+      const qg = Math.round(g2 / 255 * (tones-1)) / (tones-1) * 255;
+      const qb = Math.round(b2 / 255 * (tones-1)) / (tones-1) * 255;
+      return `rgb(${Math.round(qr)},${Math.round(qg)},${Math.round(qb)})`;
+    }
+
+    function drawBead(cx, cy, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      if (shape === 'diamond') {
+        ctx.moveTo(cx, cy - r);
+        ctx.lineTo(cx + r, cy);
+        ctx.lineTo(cx, cy + r);
+        ctx.lineTo(cx - r, cy);
+        ctx.closePath();
+        ctx.fill();
+        // Subtle highlight
+        ctx.fillStyle = 'rgba(255,255,255,0.18)';
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - r * 0.8);
+        ctx.lineTo(cx + r * 0.4, cy - r * 0.1);
+        ctx.lineTo(cx, cy);
+        ctx.lineTo(cx - r * 0.4, cy - r * 0.1);
+        ctx.closePath();
+        ctx.fill();
+      } else if (shape === 'circle') {
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.2)';
+        ctx.beginPath();
+        ctx.arc(cx - r * 0.2, cy - r * 0.2, r * 0.35, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (shape === 'hex') {
+        for (let a = 0; a < 6; a++) {
+          const ang = (a * Math.PI / 3) - Math.PI / 6;
+          const fx = cx + r * Math.cos(ang);
+          const fy = cy + r * Math.sin(ang);
+          if (a === 0) ctx.moveTo(fx, fy); else ctx.lineTo(fx, fy);
+        }
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+        ctx.fillRect(cx - r, cy - r, r * 2, r * 0.3);
+      }
+    }
+
+    // Fill background
+    ctx.fillStyle = '#c8c0b0'; // neutral bead-board color
+    ctx.fillRect(0, 0, cw, ch);
+
+    for (let row = -1; row < rows2; row++) {
+      const isOdd = row % 2 !== 0;
+      const offsetX = shape === 'hex' ? (isOdd ? bSize / 2 : 0) : (isOdd ? bSize / 2 : 0);
+      const cy2 = shape === 'hex' ? row * rowH : row * bSize;
+
+      for (let col = -1; col < cols2; col++) {
+        const cx2 = col * bSize + offsetX;
+        if (cx2 < -bSize || cx2 > cw + bSize || cy2 < -bSize || cy2 > ch + bSize) continue;
+        const [r2, g2, b2] = sampleColor(cx2, cy2);
+        const color = closestBeadColor(r2, g2, b2);
+        drawBead(cx2, cy2, color);
+      }
+    }
+
+    spinner.classList.remove('visible');
+    return;
+  }
+
   // ---- DESTROY MODE (original edge+fill pipeline) ----
   const prep = prepareGray(cw, ch);
   const gray = prep.gray;
@@ -3033,61 +3247,110 @@ async function renderCircuit(myID) {
   }
 
   const busMode = S.circuitBus;
-  const busW = Math.max(2, Math.round(S.circuitBusWidth));
+  const busW = Math.max(1, Math.round(S.circuitBusWidth));
   const breakPct = S.circuitBreak / 100;
 
   if (busMode !== 'none') {
     ctx.lineCap = 'butt';
-    const busColor = fg[0];
 
-    if (busMode === 'h' || busMode === 'both') {
-      // Horizontal bus lines every ~8 rows, guided by image
-      const busStep = Math.max(4, Math.round(grows / 6));
-      for (let row = busStep; row < grows - 1; row += busStep) {
-        const y = row * cell + cell / 2;
-        let x = 0;
-        while (x < cw) {
-          // Break segments randomly
-          const segLen = cell * (3 + Math.floor(rand(x * 0.01 + row * 0.3) * 8));
-          const doBreak = rand(x * 0.02 + row * 0.5) < breakPct;
-          if (!doBreak) {
-            ctx.strokeStyle = busColor;
-            ctx.lineWidth = busW;
+    // Chip-art style: dense groups of ultra-fine parallel lines spanning full canvas
+    // Each group has 3-7 lines with slight spacing variation, like silicon bus traces
+    function drawBusGroup(isHoriz, startPos, groupSeed) {
+      const lineCount = 2 + Math.floor(rand(groupSeed) * 5); // 2-6 lines per group
+      const baseSpacing = busW + Math.max(1, Math.floor(rand(groupSeed * 2) * 3));
+
+      for (let li = 0; li < lineCount; li++) {
+        const offset = li * baseSpacing;
+        // Vary line thickness — some thin (1px), some thick (busW)
+        const lw = rand(groupSeed * 3 + li) > 0.65 ? busW : Math.max(1, Math.round(busW * 0.4));
+        const color = fg[Math.abs(Math.floor(groupSeed * 7 + li * 3)) % fg.length];
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lw;
+
+        if (isHoriz) {
+          const y = startPos + offset;
+          if (y >= ch) return;
+          // Draw full line with possible breaks
+          let x = 0;
+          while (x < cw) {
+            // Breaks: short gaps to simulate damaged/cut traces
+            const gapChance = rand(x * 0.01 + y * 0.07 + li * 11);
+            if (gapChance < breakPct) {
+              // Gap: random length
+              x += Math.max(2, Math.round(rand(x * 0.02 + li) * cell * 3));
+              continue;
+            }
+            // Segment: draw to next potential break point
+            const segEnd = Math.min(cw, x + cell * (2 + Math.floor(rand(x * 0.015 + y * 0.03) * 12)));
             ctx.beginPath();
             ctx.moveTo(x, y);
-            ctx.lineTo(Math.min(x + segLen, cw), y);
+            ctx.lineTo(segEnd, y);
             ctx.stroke();
-            // Arrow marks on bus
-            if (rand(x * 0.03 + row) > 0.6) {
-              const ax = x + segLen * 0.5;
+            // Occasional small perpendicular stub — looks like a via connection
+            if (rand(x * 0.02 + y * 0.05 + li) > 0.88) {
+              const sx = x + (segEnd - x) * 0.5;
+              const stubLen = cell * (0.5 + rand(sx) * 1.5);
+              const dir = rand(sx * 0.1) > 0.5 ? 1 : -1;
               ctx.beginPath();
-              ctx.moveTo(ax - cell * 0.3, y - busW); ctx.lineTo(ax, y); ctx.lineTo(ax - cell * 0.3, y + busW);
+              ctx.moveTo(sx, y);
+              ctx.lineTo(sx, y + dir * stubLen);
               ctx.stroke();
+              // Tiny pad at stub end
+              ctx.fillStyle = color;
+              ctx.fillRect(sx - lw, y + dir * stubLen - lw, lw * 2, lw * 2);
             }
+            x = segEnd + Math.max(1, Math.round(rand(segEnd * 0.01) * 3));
           }
-          x += segLen + cell * (1 + rand(x * 0.04) * 2);
+        } else {
+          // Vertical
+          const x = startPos + offset;
+          if (x >= cw) return;
+          let y = 0;
+          while (y < ch) {
+            const gapChance = rand(y * 0.01 + x * 0.07 + li * 11);
+            if (gapChance < breakPct) {
+              y += Math.max(2, Math.round(rand(y * 0.02 + li) * cell * 3));
+              continue;
+            }
+            const segEnd = Math.min(ch, y + cell * (2 + Math.floor(rand(y * 0.015 + x * 0.03) * 12)));
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x, segEnd);
+            ctx.stroke();
+            if (rand(y * 0.02 + x * 0.05 + li) > 0.88) {
+              const sy = y + (segEnd - y) * 0.5;
+              const stubLen = cell * (0.5 + rand(sy) * 1.5);
+              const dir = rand(sy * 0.1) > 0.5 ? 1 : -1;
+              ctx.beginPath();
+              ctx.moveTo(x, sy);
+              ctx.lineTo(x + dir * stubLen, sy);
+              ctx.stroke();
+              ctx.fillStyle = color;
+              ctx.fillRect(x + dir * stubLen - lw, sy - lw, lw * 2, lw * 2);
+            }
+            y = segEnd + Math.max(1, Math.round(rand(segEnd * 0.01) * 3));
+          }
         }
       }
     }
 
+    if (busMode === 'h' || busMode === 'both') {
+      // Space bus groups across canvas height — denser than before
+      const numGroups = Math.max(3, Math.round(ch / (cell * (4 + rand(7) * 4))));
+      const spacing = ch / numGroups;
+      for (let g = 0; g < numGroups; g++) {
+        const startY = Math.round(g * spacing + rand(g * 3) * spacing * 0.3);
+        drawBusGroup(true, startY, g * 31 + 7);
+      }
+    }
+
     if (busMode === 'v' || busMode === 'both') {
-      const busStep = Math.max(4, Math.round(gcols / 6));
-      for (let col = busStep; col < gcols - 1; col += busStep) {
-        const x = col * cell + cell / 2;
-        let y = 0;
-        while (y < ch) {
-          const segLen = cell * (3 + Math.floor(rand(y * 0.01 + col * 0.3) * 8));
-          const doBreak = rand(y * 0.02 + col * 0.5) < breakPct;
-          if (!doBreak) {
-            ctx.strokeStyle = busColor;
-            ctx.lineWidth = busW;
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-            ctx.lineTo(x, Math.min(y + segLen, ch));
-            ctx.stroke();
-          }
-          y += segLen + cell * (1 + rand(y * 0.04) * 2);
-        }
+      const numGroups = Math.max(3, Math.round(cw / (cell * (4 + rand(13) * 4))));
+      const spacing = cw / numGroups;
+      for (let g = 0; g < numGroups; g++) {
+        const startX = Math.round(g * spacing + rand(g * 5) * spacing * 0.3);
+        drawBusGroup(false, startX, g * 37 + 13);
       }
     }
   }
@@ -3184,6 +3447,79 @@ async function renderCircuit(myID) {
   await yieldFrame();
   if (myID !== currentRenderID) return;
 
+  // ---- FRAGMENTATION / TEXT MODE ----
+  if (S.circuitFrag !== 'none') {
+    const fCell = Math.max(8, Math.round(S.circuitFragCell));
+    const fCols = Math.ceil(cw / fCell);
+    const fRows = Math.ceil(ch / fCell);
+    const fChaos = S.circuitFragChaos / 100;
+    const dispX = S.circuitDispX;
+    const dispY = S.circuitDispY;
+
+    const CHARSETS = {
+      elec: 'ΩμΦ∑±×÷√∞∂∫≈≠RC#@!?$&*01',
+      alpha: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+      num:   '0123456789',
+      mix:   'ΩμΦ∑RC01ABXYZabxyz#@!?±×÷'
+    };
+    const charset = CHARSETS[S.circuitCharset] || CHARSETS.elec;
+
+    // Sample source at frag resolution
+    const fragOff = document.createElement('canvas');
+    fragOff.width = fCols; fragOff.height = fRows;
+    const fCtx = fragOff.getContext('2d', { willReadFrequently: true });
+    drawSourceToCanvas(fragOff, fCtx, fCols, fRows);
+    const fragData = fCtx.getImageData(0, 0, fCols, fRows).data;
+
+    const fontSize = Math.max(6, Math.round(fCell * 0.72));
+    ctx.font = `bold ${fontSize}px monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    for (let fr = 0; fr < fRows; fr++) {
+      for (let fc = 0; fc < fCols; fc++) {
+        const idx2 = (fr * fCols + fc) * 4;
+        const lum2 = fragData[idx2] * 0.299 + fragData[idx2+1] * 0.587 + fragData[idx2+2] * 0.114;
+
+        // Only affect cells where image is active (dark enough)
+        if (lum2 > densityThresh + 30) continue;
+
+        const cx2 = fc * fCell + fCell / 2;
+        const cy2 = fr * fCell + fCell / 2;
+
+        // Per-cell displacement — creates the broken/shifted look
+        const cellRand = rand(fc * 31 + fr * 17);
+        const dx = cellRand < fChaos ? (rand(fc * 7 + fr * 3) - 0.5) * dispX * 2 : 0;
+        const dy = cellRand < fChaos ? (rand(fc * 5 + fr * 11) - 0.5) * dispY * 2 : 0;
+
+        const mode = S.circuitFrag;
+        const cellType = mode === 'mix'
+          ? (rand(fc * 13 + fr * 7) < 0.4 ? 'text' : rand(fc * 19 + fr * 5) < 0.5 ? 'block' : 'skip')
+          : mode;
+
+        const color2 = colorAt(fc, fr);
+
+        if (cellType === 'block') {
+          // Solid block with displacement
+          ctx.fillStyle = color2;
+          ctx.globalAlpha = 0.85 + rand(fc + fr) * 0.15;
+          ctx.fillRect(cx2 - fCell/2 + dx, cy2 - fCell/2 + dy, fCell - 1, fCell - 1);
+          ctx.globalAlpha = 1;
+        } else if (cellType === 'text') {
+          // Random char from charset
+          const char = charset[Math.floor(rand(fc * 23 + fr * 11) * charset.length)];
+          ctx.fillStyle = color2;
+          ctx.globalAlpha = 0.9;
+          ctx.fillText(char, cx2 + dx, cy2 + dy);
+          ctx.globalAlpha = 1;
+        }
+      }
+    }
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+  }
+
   // ---- BORDER PADS ----
   const padW = Math.max(2, traceW * 3);
   const padH = Math.max(3, Math.round(cell * 0.55));
@@ -3276,6 +3612,7 @@ function doExport() {
 $('panel-toggle').addEventListener('click', () => {
   const p = $('panel');
   const collapsed = p.classList.toggle('collapsed');
+  // Panel on right: ‹ when open (click to collapse), › when collapsed (click to expand)
   $('panel-toggle').innerHTML = collapsed ? '&#8250;' : '&#8249;';
   if (collapsed) {
     p.style.borderLeft = 'none';
