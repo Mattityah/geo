@@ -154,6 +154,13 @@
     <div class="sw-row"><span class="sw-label">Color</span><div class="sw-btns" id="sw-color"><button class="sw-btn active" data-val="mono">Mono</button><button class="sw-btn" data-val="multi">Multi</button></div></div>
     <div id="palette-wrap" style="display:none"><div style="font-size:11px;margin-bottom:6px">Palette</div><div class="palette" id="palette"></div></div>
 
+    <div class="section-title">Presets</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px">
+      <button class="sw-btn" onclick="applyStylePreset('micro')" style="font-size:9px;padding:4px 7px">Micro-Geo</button>
+      <button class="sw-btn" onclick="applyStylePreset('medieval')" style="font-size:9px;padding:4px 7px">Medieval</button>
+      <button class="sw-btn" onclick="applyStylePreset('pastel')" style="font-size:9px;padding:4px 7px">Pastel</button>
+      <button class="sw-btn" onclick="applyStylePreset('bold')" style="font-size:9px;padding:4px 7px">Bold</button>
+    </div>
     <div class="section-title">Size Texture</div>
     <div class="sw-row">
       <span class="sw-label">Type</span>
@@ -246,6 +253,9 @@ const S = {
 };
 
 const PALETTE = ['#2e5fa3','#c95f2a','#2a6b3a','#d4a0b0','#7a3b2e','#c8b040','#6b4a8a'];
+const PALETTE_PASTEL = ['#7ab3a0','#c4a0b8','#e8a090','#a0b8d4','#b8c4a0','#d4b8a0','#a0a8c4'];
+const PALETTE_MEDIEVAL = ['#3a6b4a','#c4a0b8','#8a3a4a','#4a6b8a','#c4b080','#6b8a4a','#8a6b3a'];
+const PALETTE_MONO_WARM = ['#2a2018'];
 let activeColors = [...PALETTE];
 let sourceImg = null, renderJob = null;
 
@@ -616,6 +626,108 @@ async function doRender(){
     for(const[col,group]of Object.entries(byColor)){if(myID!==currentRenderID)return;ctx.fillStyle=col;ctx.beginPath();group.forEach(c=>{const rr=Math.max(0.5,(S.luminanceSize?Math.max(S.minShapeSize,Math.min(S.maxShapeSize,S.maxShapeSize-(c.lum/255)*(S.maxShapeSize-S.minShapeSize))):r)*(c.texF||1));drawShape(ctx,c.shape,c.x,c.y,rr,cr);});ctx.fill();await yieldFrame();}
   }
   if(myID===currentRenderID)spinner.classList.remove('visible');
+}
+
+
+// ---- STYLE PRESETS ----
+function applyStylePreset(name) {
+  var c = document.getElementById('palette');
+
+  function setPalette(colors) {
+    activeColors = colors.slice();
+    c.innerHTML = '';
+    colors.forEach(function(color) {
+      var sw = document.createElement('div');
+      sw.className = 'swatch active';
+      sw.style.background = color;
+      sw.dataset.color = color;
+      sw.addEventListener('click', function() {
+        sw.classList.toggle('active');
+        activeColors = [...c.querySelectorAll('.swatch.active')].map(function(s){return s.dataset.color;});
+        if (!activeColors.length) { sw.classList.add('active'); activeColors = [color]; }
+        scheduleRender();
+      });
+      c.appendChild(sw);
+    });
+  }
+
+  function setSw(id, val) {
+    document.getElementById(id).querySelectorAll('.sw-btn').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.val === val);
+    });
+  }
+
+  function setSlider(id, val) {
+    var sl = document.getElementById(id);
+    var ni = document.getElementById('num-' + id);
+    if (sl) { sl.value = val; S[sl.dataset && sl.dataset.key ? sl.dataset.key : id] = val; }
+    if (ni) ni.value = val;
+  }
+
+  if (name === 'micro') {
+    // Small circles, pastel multicolor, high density, luminance size
+    S.shape = 'circle'; setSw('sw-shape', 'circle');
+    S.color = 'multi'; setSw('sw-color', 'multi');
+    document.getElementById('palette-wrap').style.display = 'block';
+    setPalette(PALETTE_PASTEL);
+    S.stepSize = 5; document.getElementById('step-size').value = 5; document.getElementById('num-step-size').value = 5;
+    S.shapeSize = 2; document.getElementById('shape-size').value = 2; document.getElementById('num-shape-size').value = 2;
+    S.luminanceSize = true; document.getElementById('luminance-size-ind').innerHTML = '&#10003;';
+    document.getElementById('luminance-size-wrap').style.display = 'block';
+    S.minShapeSize = 0.5; document.getElementById('min-shape-size').value = 0.5; document.getElementById('num-min-shape-size').value = 0.5;
+    S.maxShapeSize = 4; document.getElementById('max-shape-size').value = 4; document.getElementById('num-max-shape-size').value = 4;
+    S.threshold = 200; document.getElementById('threshold').value = 200; document.getElementById('num-threshold').value = 200;
+    S.cornerRadius = 0; document.getElementById('corner-radius').value = 0; document.getElementById('num-corner-radius').value = 0;
+    S.dither = 'none'; setSw('sw-dither', 'none');
+    S.grid = 'regular'; setSw('sw-grid', 'regular');
+
+  } else if (name === 'medieval') {
+    S.shape = 'circle'; setSw('sw-shape', 'circle');
+    S.color = 'multi'; setSw('sw-color', 'multi');
+    document.getElementById('palette-wrap').style.display = 'block';
+    setPalette(PALETTE_MEDIEVAL);
+    S.stepSize = 4; document.getElementById('step-size').value = 4; document.getElementById('num-step-size').value = 4;
+    S.shapeSize = 1.5; document.getElementById('shape-size').value = 1.5; document.getElementById('num-shape-size').value = 1.5;
+    S.luminanceSize = true; document.getElementById('luminance-size-ind').innerHTML = '&#10003;';
+    document.getElementById('luminance-size-wrap').style.display = 'block';
+    S.minShapeSize = 0.5; document.getElementById('min-shape-size').value = 0.5; document.getElementById('num-min-shape-size').value = 0.5;
+    S.maxShapeSize = 3.5; document.getElementById('max-shape-size').value = 3.5; document.getElementById('num-max-shape-size').value = 3.5;
+    S.threshold = 220; document.getElementById('threshold').value = 220; document.getElementById('num-threshold').value = 220;
+    S.cornerRadius = 0; document.getElementById('corner-radius').value = 0; document.getElementById('num-corner-radius').value = 0;
+    S.dither = 'floyd'; setSw('sw-dither', 'floyd');
+    S.grid = 'regular'; setSw('sw-grid', 'regular');
+
+  } else if (name === 'pastel') {
+    S.shape = 'square'; setSw('sw-shape', 'square');
+    S.color = 'multi'; setSw('sw-color', 'multi');
+    document.getElementById('palette-wrap').style.display = 'block';
+    setPalette(PALETTE_PASTEL);
+    S.stepSize = 6; document.getElementById('step-size').value = 6; document.getElementById('num-step-size').value = 6;
+    S.shapeSize = 2; document.getElementById('shape-size').value = 2; document.getElementById('num-shape-size').value = 2;
+    S.luminanceSize = true; document.getElementById('luminance-size-ind').innerHTML = '&#10003;';
+    document.getElementById('luminance-size-wrap').style.display = 'block';
+    S.minShapeSize = 0.5; document.getElementById('min-shape-size').value = 0.5; document.getElementById('num-min-shape-size').value = 0.5;
+    S.maxShapeSize = 5; document.getElementById('max-shape-size').value = 5; document.getElementById('num-max-shape-size').value = 5;
+    S.threshold = 210; document.getElementById('threshold').value = 210; document.getElementById('num-threshold').value = 210;
+    S.cornerRadius = 20; document.getElementById('corner-radius').value = 20; document.getElementById('num-corner-radius').value = 20;
+    S.dither = 'ordered'; setSw('sw-dither', 'ordered');
+    S.grid = 'benday'; setSw('sw-grid', 'benday');
+
+  } else if (name === 'bold') {
+    S.shape = 'square'; setSw('sw-shape', 'square');
+    S.color = 'mono'; setSw('sw-color', 'mono');
+    document.getElementById('palette-wrap').style.display = 'none';
+    S.stepSize = 8; document.getElementById('step-size').value = 8; document.getElementById('num-step-size').value = 8;
+    S.shapeSize = 6; document.getElementById('shape-size').value = 6; document.getElementById('num-shape-size').value = 6;
+    S.luminanceSize = false; document.getElementById('luminance-size-ind').innerHTML = '&nbsp;';
+    document.getElementById('luminance-size-wrap').style.display = 'none';
+    S.threshold = 128; document.getElementById('threshold').value = 128; document.getElementById('num-threshold').value = 128;
+    S.cornerRadius = 1; document.getElementById('corner-radius').value = 1; document.getElementById('num-corner-radius').value = 1;
+    S.dither = 'floyd'; setSw('sw-dither', 'floyd');
+    S.grid = 'regular'; setSw('sw-grid', 'regular');
+  }
+
+  scheduleRender();
 }
 
 document.getElementById('btn-export').addEventListener('click',doExport);
