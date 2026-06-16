@@ -1257,64 +1257,6 @@ document.getElementById('preset-file-input').addEventListener('change', function
   }
 });
 
-</script>
-
-</div>
-ders ? 'block' : 'none';
-
-      // Sync custom mix
-      syncCustomMixUI();
-
-      // Rebuild palette swatches with saved colors
-      var palEl = document.getElementById('palette');
-      palEl.innerHTML = '';
-      var colorsToShow = preset._activeColors && preset._activeColors.length ? preset._activeColors : PALETTE;
-      colorsToShow.forEach(function(color) {
-        var sw = document.createElement('div');
-        sw.className = 'swatch active';
-        sw.style.background = color;
-        sw.dataset.color = color;
-        sw.addEventListener('click', function() {
-          sw.classList.toggle('active');
-          activeColors = [...palEl.querySelectorAll('.swatch.active')].map(function(s){return s.dataset.color;});
-          if (!activeColors.length) { sw.classList.add('active'); activeColors = [color]; }
-          scheduleRender();
-        });
-        palEl.appendChild(sw);
-      });
-
-      // Apply mode
-      setMode(S.mode);
-
-      scheduleRender();
-      showPresetStatus('Preset loaded!', '#2a6b3a');
-    } catch(e) {
-      showPresetStatus('Error: invalid preset file', '#c95f2a');
-      console.error(e);
-    }
-  };
-  r.readAsText(file);
-}
-
-function showPresetStatus(msg, color) {
-  var el = document.getElementById('preset-status');
-  if (!el) return;
-  el.textContent = msg;
-  el.style.color = color || 'var(--muted)';
-  setTimeout(function() { el.textContent = ''; }, 3000);
-}
-
-document.getElementById('btn-export-preset').addEventListener('click', exportPreset);
-document.getElementById('btn-import-preset').addEventListener('click', function() {
-  document.getElementById('preset-file-input').click();
-});
-document.getElementById('preset-file-input').addEventListener('change', function(e) {
-  if (e.target.files[0]) {
-    importPreset(e.target.files[0]);
-    e.target.value = '';
-  }
-});
-
 
 // ── HOME NAVIGATION ──────────────────────────────────────────
 window.enterTool = function(mode) {
@@ -1322,17 +1264,15 @@ window.enterTool = function(mode) {
   var ts = document.getElementById('tool-screen');
   ts.style.display = 'flex';
   ts.classList.add('visible');
-  // Set the mode
   setMode(mode);
-}
+};
 
 window.goHome = function() {
   document.getElementById('tool-screen').style.display = 'none';
   document.getElementById('tool-screen').classList.remove('visible');
   document.getElementById('home-screen').style.display = 'flex';
-  // Stop any texture animation
   stopTexAnimation();
-}
+};
 
 </script>
 </body>
