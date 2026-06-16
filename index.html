@@ -612,26 +612,27 @@ function renderASCII() {
   var cs = asciiState.charset || ' .:-=+*#%@';
   var sorted = analyzeCharset(cs);
 
-  // Draw image to offscreen at cols x rows resolution
+  // Sample image at cols x rows resolution
   var W = cols2, H = rows2;
-  off.width = W; off.height = H;
-  offCtx.fillStyle = '#fff'; offCtx.fillRect(0,0,W,H);
-  offCtx.filter = 'contrast('+S.contrast+') brightness('+S.brightness+')';
+  var tempC = document.createElement('canvas'); tempC.width = W; tempC.height = H;
+  var tempX = tempC.getContext('2d', {willReadFrequently: true});
+  tempX.fillStyle = '#fff'; tempX.fillRect(0,0,W,H);
+  tempX.filter = 'contrast('+S.contrast+') brightness('+S.brightness+')';
   var sc = Math.min(W/sourceImg.width, H/sourceImg.height) * (S.imgScale/100);
   var sw = sourceImg.width*sc, sh = sourceImg.height*sc;
-  offCtx.save(); offCtx.translate(W/2+S.imgX*(W/S.canvasW), H/2+S.imgY*(H/S.canvasH));
-  offCtx.rotate(S.imgRotation*Math.PI/180);
-  offCtx.drawImage(sourceImg,-sw/2,-sh/2,sw,sh);
-  offCtx.restore(); offCtx.filter='none';
+  tempX.save(); tempX.translate(W/2+S.imgX*(W/S.canvasW), H/2+S.imgY*(H/S.canvasH));
+  tempX.rotate(S.imgRotation*Math.PI/180);
+  tempX.drawImage(sourceImg,-sw/2,-sh/2,sw,sh);
+  tempX.restore(); tempX.filter='none';
 
-  var px = offCtx.getImageData(0,0,W,H).data;
+  var px = tempX.getImageData(0,0,W,H).data;
   var grid = [];
   for (var r=0; r<rows2; r++) {
     var row = [];
     for (var c=0; c<cols2; c++) {
       var idx = (r*W+c)*4;
-      var a = px[idx+3]/255;
-      var lum = (px[idx]*a+255*(1-a) + px[idx+1]*a+255*(1-a) + px[idx+2]*a+255*(1-a))/3;
+      var a2 = px[idx+3]/255;
+      var lum = (px[idx]*a2+255*(1-a2) + px[idx+1]*a2+255*(1-a2) + px[idx+2]*a2+255*(1-a2))/3;
       var inv = S.invert ? lum/255 : 1-lum/255;
       var ci = Math.max(0, Math.min(sorted.length-1, Math.floor(inv*(sorted.length-1))));
       row.push(sorted[ci] || ' ');
@@ -645,16 +646,31 @@ function renderASCII() {
     for (var i=0;i<cols2;i++) { top.push(B.h); bot.push(B.h); }
     top.push(B.tr); bot.push(B.br);
     var bordered = [top];
-    grid.forEach(function(row) { bordered.push([B.v].concat(row).concat([B.v])); });
+    grid.forEach(function(row2) { bordered.push([B.v].concat(row2).concat([B.v])); });
     bordered.push(bot);
     asciiContent = bordered;
   } else {
     asciiContent = grid;
   }
 
+  // Update text preview
   var text = asciiContent.map(function(r){return r.join('');}).join('\n');
   if (asciiState.comments) text = '/*\n' + text + '\n*/';
   document.getElementById('ascii-output').textContent = text;
+
+  // Draw to main canvas
+  canvas.width = S.canvasW; canvas.height = S.canvasH;
+  ctx.fillStyle = '#f0ede8'; ctx.fillRect(0,0,S.canvasW,S.canvasH);
+  ctx.fillStyle = '#1a1a1a';
+  var cw = S.canvasW / cols2, ch = S.canvasH / rows2;
+  var fs = Math.max(4, Math.floor(ch * 0.85));
+  ctx.font = fs + 'px monospace';
+  ctx.textBaseline = 'top';
+  grid.forEach(function(row3, r) {
+    row3.forEach(function(ch2, c) {
+      if (ch2 !== ' ') ctx.fillText(ch2, c*cw, r*ch);
+    });
+  });
 }
 
 document.getElementById('btn-ascii-render').addEventListener('click', renderASCII);
