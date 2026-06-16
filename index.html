@@ -784,6 +784,7 @@ input[type="range"]::-webkit-slider-thumb {
             <button class="sw-btn active" data-val="fill">Fill</button>
             <button class="sw-btn" data-val="line">Line</button>
             <button class="sw-btn" data-val="poster">Poster</button>
+            <button class="sw-btn" data-val="edge">Edge+Fill</button>
           </div>
         </div>
 
@@ -1463,7 +1464,7 @@ function getTextureFactor(nx, ny, lum) {
 function getSafeHalftoneGrid(cw, ch, step) {
   const size = Math.max(cw, ch);
   const diag = Math.ceil(Math.sqrt(2) * size) + step * 4;
-  const MAX = 60000;
+  const MAX = 200000;
   let s = step;
 
   while (true) {
@@ -1735,8 +1736,92 @@ async function renderDots(myID) {
   spinner.classList.remove('visible');
 }
 
+
+function sobelEdges(gray, w, h) {
+  // Sobel edge detection — returns edge strength 0..255
+  const out = new Float32Array(w * h);
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const g = (r, c) => gray[(y + r) * w + (x + c)];
+      const gx = -g(-1,-1) + g(-1,1) - 2*g(0,-1) + 2*g(0,1) - g(1,-1) + g(1,1);
+      const gy = -g(-1,-1) - 2*g(-1,0) - g(-1,1) + g(1,-1) + 2*g(1,0) + g(1,1);
+      out[y * w + x] = Math.sqrt(gx*gx + gy*gy);
+    }
+  }
+  return out;
+}
+
+function floodFillBackground(mask, w, h) {
+  // BFS from all border pixels that are 0 (background) — marks them as 2
+  // Anything remaining as 0 after this is an enclosed region → fill to 1
+  const bg = new Uint8Array(mask);
+  const queue = [];
+
+  function enqueue(x, y) {
+    const i = y * w + x;
+    if (bg[i] === 0) { bg[i] = 2; queue.push(x, y); }
+  }
+
+  for (let x = 0; x < w; x++) { enqueue(x, 0); enqueue(x, h - 1); }
+  for (let y = 0; y < h; y++) { enqueue(0, y); enqueue(w - 1, y); }
+
+  let qi = 0;
+  while (qi < queue.length) {
+    const x = queue[qi++];
+    const y = queue[qi++];
+    if (x > 0)     enqueue(x - 1, y);
+    if (x < w - 1) enqueue(x + 1, y);
+    if (y > 0)     enqueue(x, y - 1);
+    if (y < h - 1) enqueue(x, y + 1);
+  }
+
+  // bg=2 → true background (stays 0), bg=0 → enclosed → fill to 1, bg=1 → edge
+  const out = new Uint8Array(w * h);
+  for (let i = 0; i < out.length; i++) {
+    out[i] = bg[i] !== 2 ? 1 : 0;
+  }
+  return out;
+}
+
 function solidBuildMask(gray, w, h) {
   let mask = new Uint8Array(w * h);
+
+  if (S.solidMode === 'edge') {
+    // 1. Sobel on grayscale
+    const edges = sobelEdges(gray, w, h);
+
+    // Normalize and threshold edges
+    let maxE = 0;
+    for (let i = 0; i < edges.length; i++) if (edges[i] > maxE) maxE = edges[i];
+    const edgeThresh = maxE * (S.solidThreshold / 255);
+
+    for (let i = 0; i < edges.length; i++) {
+      mask[i] = edges[i] > edgeThresh ? 1 : 0;
+    }
+
+    // 2. Dilate edges to close gaps (controlled by strokeWeight)
+    const sw = Math.max(1, Math.round(S.solidStrokeWeight));
+    mask = morph(mask, w, h, sw, 'dilate');
+
+    // 3. Smooth to clean up jagged edges
+    const smooth = Math.max(0, Math.round(S.solidSmooth));
+    for (let i = 0; i < smooth; i++) mask = majority(mask, w, h);
+
+    // 4. Flood fill enclosed regions
+    mask = floodFillBackground(mask, w, h);
+
+    // 5. Post smooth + despeckle
+    for (let i = 0; i < smooth; i++) mask = majority(mask, w, h);
+    const desp = Math.max(0, Math.round(S.solidDespeckle));
+    if (desp > 0) mask = removeSpeckles(mask, w, h, desp);
+
+    // 6. Expand/erode final shape
+    const exp = Math.round(S.solidExpand);
+    if (exp > 0) mask = morph(mask, w, h, exp, 'dilate');
+    if (exp < 0) mask = morph(mask, w, h, Math.abs(exp), 'erode');
+
+    return mask;
+  }
 
   for (let i = 0; i < gray.length; i++) {
     let v = gray[i];
@@ -1772,6 +1857,7 @@ function solidBuildMask(gray, w, h) {
 
   return mask;
 }
+
 
 function morph(mask, w, h, radius, type) {
   let current = mask;
