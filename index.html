@@ -610,10 +610,10 @@ async function doRender(){
   await yieldFrame();if(myID!==currentRenderID)return;
   const r=S.shapeSize,cr=S.cornerRadius,CHUNK=1500;
   if(S.color==='mono'){
-    for(let i=0;i<cells.length;i+=CHUNK){if(myID!==currentRenderID)return;ctx.fillStyle='#1a1a1a';ctx.beginPath();const end=Math.min(i+CHUNK,cells.length);for(let j=i;j<end;j++){const c=cells[j];const rr=S.luminanceSize?Math.max(S.minShapeSize,Math.min(S.maxShapeSize,S.maxShapeSize-(c.lum/255)*(S.maxShapeSize-S.minShapeSize))):r;drawShape(ctx,c.shape,c.x,c.y,rr,cr);}ctx.fill();await yieldFrame();}
+    for(let i=0;i<cells.length;i+=CHUNK){if(myID!==currentRenderID)return;ctx.fillStyle='#1a1a1a';ctx.beginPath();const end=Math.min(i+CHUNK,cells.length);for(let j=i;j<end;j++){const c=cells[j];const rr=Math.max(0.5,(S.luminanceSize?Math.max(S.minShapeSize,Math.min(S.maxShapeSize,S.maxShapeSize-(c.lum/255)*(S.maxShapeSize-S.minShapeSize))):r)*(c.texF||1));drawShape(ctx,c.shape,c.x,c.y,rr,cr);}ctx.fill();await yieldFrame();}
   } else {
     const byColor={};cells.forEach(c=>{(byColor[c.color]=byColor[c.color]||[]).push(c);});
-    for(const[col,group]of Object.entries(byColor)){if(myID!==currentRenderID)return;ctx.fillStyle=col;ctx.beginPath();group.forEach(c=>{const rr=S.luminanceSize?Math.max(S.minShapeSize,Math.min(S.maxShapeSize,S.maxShapeSize-(c.lum/255)*(S.maxShapeSize-S.minShapeSize))):r;drawShape(ctx,c.shape,c.x,c.y,rr,cr);});ctx.fill();await yieldFrame();}
+    for(const[col,group]of Object.entries(byColor)){if(myID!==currentRenderID)return;ctx.fillStyle=col;ctx.beginPath();group.forEach(c=>{const rr=Math.max(0.5,(S.luminanceSize?Math.max(S.minShapeSize,Math.min(S.maxShapeSize,S.maxShapeSize-(c.lum/255)*(S.maxShapeSize-S.minShapeSize))):r)*(c.texF||1));drawShape(ctx,c.shape,c.x,c.y,rr,cr);});ctx.fill();await yieldFrame();}
   }
   if(myID===currentRenderID)spinner.classList.remove('visible');
 }
