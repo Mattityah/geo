@@ -63,9 +63,30 @@
     .panel { width: 260px; height: 100%; border-top: none; border-left: 1px solid var(--border); --panel-h: 100%; }
     .handle { display: none; }
   }
-</style>
-</head>
-<body>
+
+/* ══ HOME SCREEN ════
+<!-- ══ HOME SCREEN ══════════════════════════════════════════ -->
+<div id="home-screen">
+  <img src="logoHOME-GiocoGeometry.jpg" alt="GiocoGeometry" id="home-logo">
+  <div id="home-buttons">
+    <button class="home-btn" id="btn-halftone" onclick="enterTool('halftone')">
+      <span class="home-btn-label">HALFTONE</span>
+      <span class="home-btn-sub">grid · shapes · dithering</span>
+    </button>
+    <button class="home-btn" id="btn-crt" onclick="enterTool('crt')">
+      <span class="home-btn-label">CRT</span>
+      <span class="home-btn-sub">monitor · tv · lcd</span>
+    </button>
+  </div>
+  <div id="home-footer">mattityah.github.io/geo</div>
+</div>
+
+<!-- ══ TOOL SCREEN ═══════════════════════════════════════════ -->
+<div id="tool-screen" style="display:none;height:100%;flex-direction:column;">
+  <div id="home-back" onclick="goHome()">
+    <span id="back-arrow">&#8592;</span> GiocoGeometry
+  </div>
+
 <div class="canvas-wrap">
   <div class="canvas-outer"><canvas id="canvas"></canvas></div>
   <div class="hint" id="hint">Tap to upload an image</div>
@@ -232,6 +253,12 @@
       <div class="row"><div class="row-top"><label>JPG Quality</label><input type="number" id="num-jpg-quality" value="92" min="10" max="100" step="1"></div><input type="range" id="jpg-quality" min="10" max="100" step="1" value="92"></div>
     </div>
     <button class="export-btn" id="btn-export">Export canvas</button>
+
+    <div class="section-title">Preset</div>
+    <button class="export-btn" id="btn-export-preset" style="margin-bottom:6px">Export preset .json</button>
+    <button class="export-btn" id="btn-import-preset">Import preset .json</button>
+    <input type="file" id="preset-file-input" accept=".json" style="display:none">
+    <div id="preset-status" style="font-size:10px;color:var(--muted);margin-top:6px;min-height:16px"></div>
   </div>
 </div>
 
@@ -951,6 +978,246 @@ document.querySelectorAll('.tab[data-tab]').forEach(function(tab) {
     if (tab.dataset.tab === 'ascii' && sourceImg) setTimeout(renderASCII, 50);
   });
 });
+
+
+// ---- PRESET EXPORT / IMPORT ----
+var PRESET_KEYS = [
+  'mode','canvasW','canvasH','blur','contrast','brightness','gamma',
+  'imgScale','imgX','imgY','imgRotation',
+  'threshold','stepSize','shapeSize','cornerRadius','minShapeSize','maxShapeSize',
+  'gridAngle','noise','relief','reliefDepth','reliefAngle','reliefThreshold','reliefBlend',
+  'dither','grid','shape','mix','color','showEffect','invert','luminanceSize',
+  'customMix',
+  'texture','texIntensity','texScale','texSpeed',
+  'crtShowEffect','crtPattern','crtDistortion','crtDotScale','crtDotPitch',
+  'crtFalloff','crtBrightness','crtGlowRadius','crtGlowIntensity',
+  'crtBloomBlend','crtBloomThreshold','crtBloomIntensity','crtBloomRadius',
+  'crtRedX','crtRedY','crtBlueX','crtBlueY',
+  'format','jpgQuality'
+];
+
+function exportPreset() {
+  var preset = {};
+  PRESET_KEYS.forEach(function(k) { preset[k] = S[k]; });
+  // Also save active palette colors
+  preset._activeColors = activeColors.slice();
+  preset._version = 1;
+
+  var json = JSON.stringify(preset, null, 2);
+  var a = document.createElement('a');
+  a.download = 'gioco-preset-' + Date.now() + '.json';
+  a.href = URL.createObjectURL(new Blob([json], {type: 'application/json'}));
+  a.click();
+  showPresetStatus('Preset exported!', '#2a6b3a');
+}
+
+function importPreset(file) {
+  var r = new FileReader();
+  r.onload = function(ev) {
+    try {
+      var preset = JSON.parse(ev.target.result);
+      if (!preset._version) throw new Error('Invalid preset file');
+
+      // Apply all keys to S
+      PRESET_KEYS.forEach(function(k) {
+        if (preset[k] !== undefined) S[k] = preset[k];
+      });
+
+      // Restore active colors
+      if (preset._activeColors) activeColors = preset._activeColors.slice();
+
+      // Sync all sliders + number inputs
+      var sliderMap = {
+        'blur':'blur','contrast':'contrast','brightness':'brightness','gamma':'gamma',
+        'img-scale':'imgScale','img-x':'imgX','img-y':'imgY','img-rotation':'imgRotation',
+        'threshold':'threshold','relief-depth':'reliefDepth','relief-angle':'reliefAngle',
+        'relief-threshold':'reliefThreshold','step-size':'stepSize','shape-size':'shapeSize',
+        'min-shape-size':'minShapeSize','max-shape-size':'maxShapeSize',
+        'corner-radius':'cornerRadius','grid-angle':'gridAngle','noise':'noise',
+        'crt-distortion':'crtDistortion','crt-dot-scale':'crtDotScale',
+        'crt-dot-pitch':'crtDotPitch','crt-falloff':'crtFalloff',
+        'crt-brightness':'crtBrightness','crt-glow-radius':'crtGlowRadius',
+        'crt-glow-intensity':'crtGlowIntensity','crt-bloom-threshold':'crtBloomThreshold',
+        'crt-bloom-intensity':'crtBloomIntensity','crt-bloom-radius':'crtBloomRadius',
+        'crt-red-x':'crtRedX','crt-red-y':'crtRedY','crt-blue-x':'crtBlueX','crt-blue-y':'crtBlueY',
+        'tex-intensity':'texIntensity','tex-scale':'texScale','tex-speed':'texSpeed'
+      };
+      Object.keys(sliderMap).forEach(function(id) {
+        var sl = document.getElementById(id);
+        var ni = document.getElementById('num-'+id);
+        var val = S[sliderMap[id]];
+        if (sl && val !== undefined) sl.value = val;
+        if (ni && val !== undefined) ni.value = val;
+      });
+
+      // Sync canvas size
+      var iw = document.getElementById('input-w'), ih = document.getElementById('input-h');
+      if (iw) iw.value = S.canvasW;
+      if (ih) ih.value = S.canvasH;
+
+      // Sync switchers
+      function syncSw(id, val) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.querySelectorAll('.sw-btn').forEach(function(b) {
+          b.classList.toggle('active', b.dataset.val === String(val));
+        });
+      }
+      syncSw('sw-dither', S.dither);
+      syncSw('sw-relief-blend', S.reliefBlend);
+      syncSw('sw-grid', S.grid);
+      syncSw('sw-shape', S.shape);
+      syncSw('sw-mix', S.mix);
+      syncSw('sw-color', S.color);
+      syncSw('sw-format', S.format);
+      syncSw('sw-texture', S.texture);
+      syncSw('sw-crt-pattern', S.crtPattern);
+      syncSw('sw-crt-bloom-blend', S.crtBloomBlend);
+
+      // Sync toggles
+      document.getElementById('effect-ind').innerHTML = S.showEffect ? '&#10003;' : '&nbsp;';
+      document.getElementById('invert-ind').innerHTML = S.invert ? '&#10003;' : '&nbsp;';
+      document.getElementById('relief-ind').innerHTML = S.relief ? '&#10003;' : '&nbsp;';
+      document.getElementById('relief-wrap').style.display = S.relief ? 'block' : 'none';
+      document.getElementById('luminance-size-ind').innerHTML = S.luminanceSize ? '&#10003;' : '&nbsp;';
+      document.getElementById('luminance-size-wrap').style.display = S.luminanceSize ? 'block' : 'none';
+      document.getElementById('crt-effect-ind').innerHTML = S.crtShowEffect ? '&#10003;' : '&nbsp;';
+      document.getElementById('mix-row').style.display = (S.shape==='mix'||S.shape==='custom') ? 'flex' : 'none';
+      document.getElementById('custom-mix-row').style.display = S.shape==='custom' ? 'block' : 'none';
+      document.getElementById('palette-wrap').style.display = S.color==='multi' ? 'block' : 'none';
+      document.getElementById('texture-params').style.display = S.texture !== 'none' ? 'block' : 'none';
+      document.getElementById('jpg-quality-wrap').style.display = S.format==='jpg' ? 'block' : 'none';
+      document.getElementById('ascii-border-opts').style.display = asciiState.borders ? 'block' : 'none';
+
+      // Sync custom mix
+      syncCustomMixUI();
+
+      // Rebuild palette swatches with saved colors
+      var palEl = document.getElementById('palette');
+      palEl.innerHTML = '';
+      var colorsToShow = preset._activeColors && preset._activeColors.length ? preset._activeColors : PALETTE;
+      colorsToShow.forEach(function(color) {
+        var sw = document.createElement('div');
+        sw.className = 'swatch active';
+        sw.style.background = color;
+        sw.dataset.color = color;
+        sw.addEventListener('click', function() {
+          sw.classList.toggle('active');
+          activeColors = [...palEl.querySelectorAll('.swatch.active')].map(function(s){return s.dataset.color;});
+          if (!activeColors.length) { sw.classList.add('active'); activeColors = [color]; }
+          scheduleRender();
+        });
+        palEl.appendChild(sw);
+      });
+
+      // Apply mode
+      setMode(S.mode);
+
+      scheduleRender();
+      showPresetStatus('Preset loaded!', '#2a6b3a');
+    } catch(e) {
+      showPresetStatus('Error: invalid preset file', '#c95f2a');
+      console.error(e);
+    }
+  };
+  r.readAsText(file);
+}
+
+function showPresetStatus(msg, color) {
+  var el = document.getElementById('preset-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = color || 'var(--muted)';
+  setTimeout(function() { el.textContent = ''; }, 3000);
+}
+
+document.getElementById('btn-export-preset').addEventListener('click', exportPreset);
+document.getElementById('btn-import-preset').addEventListener('click', function() {
+  document.getElementById('preset-file-input').click();
+});
+document.getElementById('preset-file-input').addEventListener('change', function(e) {
+  if (e.target.files[0]) {
+    importPreset(e.target.files[0]);
+    e.target.value = '';
+  }
+});
+
+</script>
+
+</div>
+ders ? 'block' : 'none';
+
+      // Sync custom mix
+      syncCustomMixUI();
+
+      // Rebuild palette swatches with saved colors
+      var palEl = document.getElementById('palette');
+      palEl.innerHTML = '';
+      var colorsToShow = preset._activeColors && preset._activeColors.length ? preset._activeColors : PALETTE;
+      colorsToShow.forEach(function(color) {
+        var sw = document.createElement('div');
+        sw.className = 'swatch active';
+        sw.style.background = color;
+        sw.dataset.color = color;
+        sw.addEventListener('click', function() {
+          sw.classList.toggle('active');
+          activeColors = [...palEl.querySelectorAll('.swatch.active')].map(function(s){return s.dataset.color;});
+          if (!activeColors.length) { sw.classList.add('active'); activeColors = [color]; }
+          scheduleRender();
+        });
+        palEl.appendChild(sw);
+      });
+
+      // Apply mode
+      setMode(S.mode);
+
+      scheduleRender();
+      showPresetStatus('Preset loaded!', '#2a6b3a');
+    } catch(e) {
+      showPresetStatus('Error: invalid preset file', '#c95f2a');
+      console.error(e);
+    }
+  };
+  r.readAsText(file);
+}
+
+function showPresetStatus(msg, color) {
+  var el = document.getElementById('preset-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = color || 'var(--muted)';
+  setTimeout(function() { el.textContent = ''; }, 3000);
+}
+
+document.getElementById('btn-export-preset').addEventListener('click', exportPreset);
+document.getElementById('btn-import-preset').addEventListener('click', function() {
+  document.getElementById('preset-file-input').click();
+});
+document.getElementById('preset-file-input').addEventListener('change', function(e) {
+  if (e.target.files[0]) {
+    importPreset(e.target.files[0]);
+    e.target.value = '';
+  }
+});
+
+
+// ── HOME NAVIGATION ──────────────────────────────────────────
+function enterTool(mode) {
+  document.getElementById('home-screen').style.display = 'none';
+  var ts = document.getElementById('tool-screen');
+  ts.style.display = 'flex';
+  ts.classList.add('visible');
+  // Set the mode
+  setMode(mode);
+}
+
+function goHome() {
+  document.getElementById('tool-screen').style.display = 'none';
+  document.getElementById('tool-screen').classList.remove('visible');
+  document.getElementById('home-screen').style.display = 'flex';
+  // Stop any texture animation
+  stopTexAnimation();
+}
 
 </script>
 </body>
