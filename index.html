@@ -379,6 +379,33 @@ input[type="range"]::-webkit-slider-thumb {
   margin: 6px 0 12px;
 }
 
+/* LOGO CANVAS ANIMATED */
+#logo-canvas-wrap {
+  position: relative;
+  width: min(720px, 88vw);
+  margin-bottom: 28px;
+  cursor: none;
+}
+
+#logo-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+#logo-hint {
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  opacity: 0.6;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 /* HOME SCREEN — base (desktop) */
 #home-screen {
   height: 100vh;
@@ -571,6 +598,14 @@ input[type="range"]::-webkit-slider-thumb {
     margin-top: 28px;
   }
 
+  #logo-canvas-wrap {
+    width: 92vw;
+    margin-bottom: 20px;
+    margin-top: 28px;
+  }
+
+  #logo-hint { display: none; }
+
   #home-logo-placeholder {
     height: 140px;
     width: 92vw;
@@ -616,7 +651,17 @@ input[type="range"]::-webkit-slider-thumb {
 <body>
 
 <div id="home-screen">
-  <img src="logoHOME-GiocoGeometry.jpg" alt="GiocoGeometry" id="home-logo" onerror="this.style.display='none';document.getElementById('home-logo-placeholder').style.display='flex';">
+  <!-- Logo hidden, used as source for halftone canvas -->
+  <img src="logoHOME-GiocoGeometry.jpg" alt="GiocoGeometry" id="home-logo"
+    style="display:none"
+    onload="initLogoCanvas(this)"
+    onerror="document.getElementById('home-logo-placeholder').style.display='flex';document.getElementById('logo-canvas-wrap').style.display='none'">
+
+  <!-- Animated halftone canvas replacing the logo -->
+  <div id="logo-canvas-wrap">
+    <canvas id="logo-canvas"></canvas>
+    <div id="logo-hint">move cursor · mouse over</div>
+  </div>
   <div id="home-logo-placeholder" style="display:none">GIOCO GEOMETRY</div>
 
   <div id="home-buttons">
@@ -3684,6 +3729,195 @@ window.goHome = function() {
 
 window.applyPreset = applyPreset;
 window.doExport = doExport;
+
+// ---- LOGO CANVAS ANIMATED ----
+window.initLogoCanvas = function(img) {
+  const wrap = document.getElementById('logo-canvas-wrap');
+  const lc = document.getElementById('logo-canvas');
+  if (!lc || !img) return;
+
+  // Set canvas dimensions proportional to image
+  const W = 720, H = Math.round(720 * img.naturalHeight / img.naturalWidth);
+  lc.width = W; lc.height = H;
+
+  const lCtx = lc.getContext('2d', { willReadFrequently: true });
+  const isMobile = window.matchMedia('(max-width: 699px)').matches || ('ontouchstart' in window);
+
+  // ---- State ----
+  let stepSize = 8;
+  let gridAngle = 0;
+  let shapeIdx = 0;
+  let t = 0; // animation time
+  let mouseX = 0.5, mouseY = 0.3;
+  let isHovering = false;
+  let rafId = null;
+  const SHAPES = ['circle', 'square', 'arrow'];
+
+  // ---- Prepare gray from logo ----
+  const srcOff = document.createElement('canvas');
+  srcOff.width = W; srcOff.height = H;
+  const sCtx = srcOff.getContext('2d', { willReadFrequently: true });
+  sCtx.drawImage(img, 0, 0, W, H);
+  const srcData = sCtx.getImageData(0, 0, W, H).data;
+  const srcGray = new Float32Array(W * H);
+  for (let i = 0; i < srcGray.length; i++) {
+    const p = i * 4;
+    srcGray[i] = srcData[p]*0.299 + srcData[p+1]*0.587 + srcData[p+2]*0.114;
+  }
+
+  function sampleGray(gw, gh) {
+    const gray = new Float32Array(gw * gh);
+    for (let gy = 0; gy < gh; gy++) {
+      for (let gx = 0; gx < gw; gx++) {
+        const sx = Math.round(gx / gw * (W - 1));
+        const sy = Math.round(gy / gh * (H - 1));
+        gray[gy * gw + gx] = srcGray[sy * W + sx];
+      }
+    }
+    return gray;
+  }
+
+  // Floyd-Steinberg dither mask
+  function ditherMask(gray, gw, gh, threshold) {
+    const out = new Uint8Array(gw * gh);
+    const buf = new Float32Array(gray);
+    const kernel = [[1,0,7/16],[-1,1,3/16],[0,1,5/16],[1,1,1/16]];
+    for (let y = 0; y < gh; y++) {
+      for (let x = 0; x < gw; x++) {
+        const i = y*gw+x;
+        const old = buf[i];
+        const nw = old < threshold ? 0 : 255;
+        out[i] = nw === 0 ? 1 : 0;
+        const err = old - nw;
+        for (const [dx,dy,w] of kernel) {
+          const nx=x+dx, ny=y+dy;
+          if (nx>=0&&nx<gw&&ny>=0&&ny<gh) buf[ny*gw+nx] += err*w;
+        }
+      }
+    }
+    return out;
+  }
+
+  function drawShape(ctx2, shape, cx, cy, r) {
+    switch(shape) {
+      case 'circle':
+        ctx2.moveTo(cx+r,cy);
+        ctx2.arc(cx,cy,r,0,Math.PI*2);
+        break;
+      case 'arrow':
+        ctx2.moveTo(cx-r,cy);
+        ctx2.lineTo(cx+r*0.6,cy-r*0.9);
+        ctx2.lineTo(cx+r*0.6,cy+r*0.9);
+        ctx2.closePath();
+        break;
+      default: // square
+        ctx2.rect(cx-r,cy-r,r*2,r*2);
+    }
+  }
+
+  function renderLogo(step, angle, shIdx) {
+    const size = Math.max(W, H);
+    const gw = Math.min(120, Math.ceil(size / step) + 2);
+    const gh = Math.min(120, Math.ceil(size / step) + 2);
+    const gray = sampleGray(gw, gh);
+    const mask = ditherMask(gray, gw, gh, 128);
+
+    lCtx.clearRect(0, 0, W, H);
+    lCtx.fillStyle = '#ffffff';
+    lCtx.fillRect(0, 0, W, H);
+    lCtx.fillStyle = '#1a1a1a';
+    lCtx.beginPath();
+
+    const angleRad = angle * Math.PI / 180;
+    const cx = W/2, cy = H/2;
+    const diag = Math.ceil(Math.sqrt(2)*size) + step*4;
+    const startX = cx - diag/2;
+    const startY = cy - diag/2;
+    const cols = Math.ceil(diag/step)+1;
+    const rows = Math.ceil(diag/step)+1;
+    const shape = SHAPES[shIdx % SHAPES.length];
+
+    for (let row = 0; row <= rows; row++) {
+      for (let col = 0; col <= cols; col++) {
+        const gc = Math.round((col/cols)*(gw-1));
+        const gr = Math.round((row/rows)*(gh-1));
+        if (!mask[gr*gw+gc]) continue;
+
+        let lx = startX + col*step;
+        let ly = startY + row*step;
+        const dx = lx-cx, dy = ly-cy;
+        const drawX = cx + dx*Math.cos(angleRad) - dy*Math.sin(angleRad);
+        const drawY = cy + dx*Math.sin(angleRad) + dy*Math.cos(angleRad);
+
+        // Only draw inside canvas bounds
+        if (drawX < -step || drawX > W+step || drawY < -step || drawY > H+step) continue;
+
+        drawShape(lCtx, shape, drawX, drawY, Math.max(0.5, step*0.38));
+      }
+    }
+    lCtx.fill();
+  }
+
+  // ---- Desktop: mouse tracking ----
+  if (!isMobile) {
+    wrap.addEventListener('mousemove', e => {
+      const rect = wrap.getBoundingClientRect();
+      mouseX = (e.clientX - rect.left) / rect.width;
+      mouseY = (e.clientY - rect.top) / rect.height;
+      isHovering = true;
+    });
+    wrap.addEventListener('mouseleave', () => { isHovering = false; });
+    document.getElementById('home-screen').addEventListener('mousemove', e => {
+      if (!isHovering) {
+        const rect = document.getElementById('home-screen').getBoundingClientRect();
+        mouseX = (e.clientX - rect.left) / rect.width;
+        mouseY = (e.clientY - rect.top) / rect.height;
+      }
+    });
+  }
+
+  // ---- Animation loop ----
+  let lastRender = 0;
+  const FPS = 24;
+  const INTERVAL = 1000 / FPS;
+
+  function animate(ts) {
+    rafId = requestAnimationFrame(animate);
+    if (ts - lastRender < INTERVAL) return;
+    lastRender = ts;
+
+    t += 0.012;
+
+    if (isMobile) {
+      // Auto-animate: smooth sine waves on all params
+      stepSize  = 5 + Math.abs(Math.sin(t * 0.4)) * 18;
+      gridAngle = Math.sin(t * 0.3) * 22;
+      shapeIdx  = Math.floor(t * 0.18) % SHAPES.length;
+    } else {
+      // Mouse controls step + angle, time controls shape cycling
+      stepSize  = 4 + mouseX * 22;       // left=fine, right=coarse
+      gridAngle = (mouseY - 0.5) * 40;   // top=negative, bottom=positive angle
+      shapeIdx  = Math.floor(t * 0.12) % SHAPES.length;
+    }
+
+    renderLogo(Math.round(stepSize), gridAngle, shapeIdx);
+  }
+
+  // Start when home screen is visible
+  rafId = requestAnimationFrame(animate);
+
+  // Pause when tool is open to save resources
+  const observer = new MutationObserver(() => {
+    const homeVisible = document.getElementById('home-screen').style.display !== 'none';
+    if (homeVisible && !rafId) {
+      rafId = requestAnimationFrame(animate);
+    } else if (!homeVisible && rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+  });
+  observer.observe(document.getElementById('tool-screen'), { attributes: true, attributeFilter: ['style'] });
+};
 </script>
 
 </body>
