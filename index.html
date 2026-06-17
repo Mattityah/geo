@@ -640,7 +640,7 @@ input[type="range"]::-webkit-slider-thumb {
 <div id="home-screen">
 
   <div id="logo-canvas-wrap">
-    <img src="logoHOME-GiocoGeometry.jpg"
+    <img src="logoHOME-GiocoGeometry.png"
          alt="GiocoGeometry"
          id="home-logo"
          onload="initLogoCanvas(this)"
@@ -2917,19 +2917,28 @@ async function renderGiocoEffect(myID) {
       }
     }
 
-    // Fill background
-    ctx.fillStyle = '#c8c0b0'; // neutral bead-board color
+    // Fill background — white (transparent feel, no board)
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, cw, ch);
+
+    // Luminosity threshold: skip cells where image is too light (empty zones)
+    // Threshold 220 = almost white, adjust with S.beadsTones as sensitivity hint
+    const skipThresh = 235;
 
     for (let row = -1; row < rows2; row++) {
       const isOdd = row % 2 !== 0;
-      const offsetX = shape === 'hex' ? (isOdd ? bSize / 2 : 0) : (isOdd ? bSize / 2 : 0);
+      const offsetX = (isOdd ? bSize / 2 : 0);
       const cy2 = shape === 'hex' ? row * rowH : row * bSize;
 
       for (let col = -1; col < cols2; col++) {
         const cx2 = col * bSize + offsetX;
         if (cx2 < -bSize || cx2 > cw + bSize || cy2 < -bSize || cy2 > ch + bSize) continue;
         const [r2, g2, b2] = sampleColor(cx2, cy2);
+
+        // Skip if pixel is near-white (no image content here)
+        const lum = r2 * 0.299 + g2 * 0.587 + b2 * 0.114;
+        if (lum > skipThresh) continue;
+
         const color = closestBeadColor(r2, g2, b2);
         drawBead(cx2, cy2, color);
       }
