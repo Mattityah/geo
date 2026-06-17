@@ -1121,7 +1121,16 @@ input[type="range"]::-webkit-slider-thumb {
           </div>
         </div>
 
-        <div class="tool-note">SVG works for Halftone and Dithering. DOTS, SOLID, GiocoFX and Circuit export as PNG/JPG.</div>
+        <div class="sw-row">
+          <span class="sw-label">Shapes</span>
+          <div class="sw-btns" id="sw-export-color">
+            <button class="sw-btn active" data-val="auto">Auto</button>
+            <button class="sw-btn" data-val="black">Black</button>
+            <button class="sw-btn" data-val="white">White</button>
+          </div>
+        </div>
+
+        <div class="tool-note">Auto = como se ve. Black/White fuerza el color de las formas al exportar, útil para fotomontajes.</div>
 
         <div class="toggle-row" id="toggle-export-transparent"><div class="tog" id="export-transparent-ind">&nbsp;</div> PNG transparente (quita el fondo)</div>
 
@@ -1243,6 +1252,7 @@ const S = {
   format: 'png',
   jpgQuality: 92,
   exportTransparent: false,
+  exportColor: 'auto',
 };
 
 // ---- PALETTE ----
@@ -1376,6 +1386,7 @@ makeSwitcher('sw-circuit-charset', 'circuitCharset');
 makeSwitcher('sw-format', 'format', val => {
   $('jpg-quality-wrap').style.display = val === 'jpg' ? 'block' : 'none';
 });
+makeSwitcher('sw-export-color', 'exportColor');
 
 // ---- BUILD PALETTE SWATCHES ----
 function buildPalette() {
@@ -3554,31 +3565,54 @@ function doExport() {
   const mime = S.format === 'jpg' ? 'image/jpeg' : 'image/png';
   const quality = S.format === 'jpg' ? (S.jpgQuality || 92) / 100 : undefined;
 
+  // Detect if current mode has dark background
+  const darkBg = (S.mode === 'halftone' && S.color === 'invert') ||
+                 (S.mode === 'giocoeffect' && S.gfxColor === 'invert') ||
+                 (S.mode === 'circuit' && S.circuitColor === 'invert');
+
   const exportCanvas = document.createElement('canvas');
   exportCanvas.width = canvas.width;
   exportCanvas.height = canvas.height;
   const ec = exportCanvas.getContext('2d');
 
-  if (S.format === 'jpg' || !S.exportTransparent) {
-    // JPG or PNG with background: composite over the correct background color
-    const bgColor = (S.mode === 'halftone' && S.color === 'invert') ||
-                    (S.mode === 'giocoeffect' && S.gfxColor === 'invert') ||
-                    (S.mode === 'circuit' && S.circuitColor === 'invert')
-                    ? '#1a1a1a' : '#ffffff';
-    ec.fillStyle = bgColor;
-    ec.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-    ec.drawImage(canvas, 0, 0);
-  } else {
-    // PNG transparent: remove background color, keep shapes
-    const darkBg = (S.mode === 'halftone' && S.color === 'invert') ||
-                   (S.mode === 'giocoeffect' && S.gfxColor === 'invert') ||
-                   (S.mode === 'circuit' && S.circuitColor === 'invert');
-    ec.drawImage(canvas, 0, 0);
+  // Step 1: composite canvas onto correct background
+  const bgColor = darkBg ? '#1a1a1a' : '#ffffff';
+  ec.fillStyle = bgColor;
+  ec.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+  ec.drawImage(canvas, 0, 0);
+
+  // Step 2: remap shape colors if Black or White selected
+  if (S.exportColor !== 'auto') {
     const imgData = ec.getImageData(0, 0, exportCanvas.width, exportCanvas.height);
     const d = imgData.data;
+    const wantWhite = S.exportColor === 'white';
+
     for (let i = 0; i < d.length; i += 4) {
       const lum = d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114;
-      d[i+3] = darkBg ? Math.round(lum) : Math.round(255 - lum);
+      // Determine if this pixel is a "shape" (dark on light bg) or "background"
+      const isShape = darkBg ? lum > 128 : lum < 128;
+      if (isShape) {
+        // Force shape to white or black
+        const v = wantWhite ? 255 : 0;
+        d[i] = v; d[i+1] = v; d[i+2] = v;
+      } else {
+        // Force background to the opposite
+        const v = wantWhite ? 0 : 255;
+        d[i] = v; d[i+1] = v; d[i+2] = v;
+      }
+    }
+    ec.putImageData(imgData, 0, 0);
+  }
+
+  // Step 3: if PNG transparent, remove background
+  if (S.format === 'png' && S.exportTransparent) {
+    const imgData = ec.getImageData(0, 0, exportCanvas.width, exportCanvas.height);
+    const d = imgData.data;
+    // After color remapping, background is always white (shapes white) or black
+    const removeDark = S.exportColor === 'white' ? false : !darkBg;
+    for (let i = 0; i < d.length; i += 4) {
+      const lum = d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114;
+      d[i+3] = removeDark ? Math.round(lum) : Math.round(255 - lum);
     }
     ec.putImageData(imgData, 0, 0);
   }
