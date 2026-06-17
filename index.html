@@ -382,13 +382,23 @@ input[type="range"]::-webkit-slider-thumb {
 
 /* LOGO CANVAS */
 #logo-canvas-wrap {
+  position: relative;
   width: min(936px, 94vw);
   margin-bottom: 28px;
 }
-#logo-canvas {
+#home-logo {
   display: block;
   width: 100%;
   height: auto;
+}
+#logo-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  mix-blend-mode: multiply;
+  opacity: 0.18;
+  pointer-events: none;
 }
 
 /* HOME SCREEN — base (desktop) */
@@ -403,13 +413,6 @@ input[type="range"]::-webkit-slider-thumb {
   padding-bottom: 44px; /* space for absolute footer */
 }
 
-#home-logo {
-  width: min(936px, 94vw);
-  max-height: 65vh;
-  object-fit: contain;
-  display: block;
-  margin-bottom: 28px;
-}
 
 #home-logo-placeholder {
   width: min(936px, 94vw);
@@ -592,14 +595,6 @@ input[type="range"]::-webkit-slider-thumb {
     margin-top: 24px;
   }
 
-  #home-logo-placeholder {
-    height: 176px;
-    width: 100vw;
-    margin-bottom: 18px;
-    margin-top: 24px;
-    flex-shrink: 0;
-  }
-
   #home-buttons {
     flex-direction: column;
     width: 88vw;
@@ -640,16 +635,16 @@ input[type="range"]::-webkit-slider-thumb {
 <body>
 
 <div id="home-screen">
-  <!-- Static img used as source, canvas shown instead -->
-  <img src="logoHOME-GiocoGeometry.jpg" alt="GiocoGeometry" id="home-logo"
-    style="display:none"
-    onload="initLogoCanvas(this)"
-    onerror="document.getElementById('home-logo-fallback').style.display='block';document.getElementById('logo-canvas-wrap').style.display='none'">
-
   <div id="logo-canvas-wrap">
-    <canvas id="logo-canvas"></canvas>
+    <!-- Logo image — always visible as base -->
+    <img src="logoHOME-GiocoGeometry.jpg" alt="GiocoGeometry" id="home-logo"
+      style="display:block;width:100%;height:auto"
+      onload="initLogoCanvas(this)"
+      onerror="this.style.opacity='1'">
+    <!-- Canvas overlay for subtle animation -->
+    <canvas id="logo-canvas" style="pointer-events:none"></canvas>
   </div>
-  <div id="home-logo-fallback" style="display:none;font-size:22px;letter-spacing:0.18em;margin-bottom:28px;color:var(--text)">GIOCO GEOMETRY</div>
+  <div id="home-logo-placeholder" style="display:none;font-size:22px;letter-spacing:0.18em;margin-bottom:28px;color:var(--text)">GIOCO GEOMETRY</div>
 
   <div id="home-buttons">
     <button class="home-btn" id="btn-halftone" onclick="enterTool('halftone')">
@@ -3920,15 +3915,9 @@ $('preset-file-input').addEventListener('change', e => {
   reader.readAsText(file);
 });
 
-// ---- LOGO CANVAS ANIMATED ----
+// ---- LOGO ANIMATED OVERLAY ----
+// Strategy: show logo as <img>, animate a canvas overlay with Voronoi texture
 (function() {
-  const P = {
-    threshold: 200, stepSize: 8, brightness: 1.4, gamma: 1.7,
-    shapeSize: 2, cornerRadius: 3,
-    luminanceSize: true, minShapeSize: 1, maxShapeSize: 2,
-    texIntensity: 0.85, texScale: 4
-  };
-
   function voronoiDist(x, y, scale) {
     const sx=x*scale, sy=y*scale, ix=Math.floor(sx), iy=Math.floor(sy);
     let minD=9999;
@@ -3947,138 +3936,73 @@ $('preset-file-input').addEventListener('change', e => {
     const lc   = document.getElementById('logo-canvas');
     if (!lc || !img || !img.naturalWidth) return;
 
-    // Canvas = same pixel size as source image, CSS scales it
-    const W = img.naturalWidth, H = img.naturalHeight;
-    lc.width = W; lc.height = H;
-    wrap.style.aspectRatio = W + '/' + H;
+    // Show img on top of canvas
+    img.style.display = 'block';
+    img.style.position = 'absolute';
+    img.style.inset = '0';
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'contain';
+    wrap.style.position = 'relative';
 
-    const lCtx = lc.getContext('2d', { willReadFrequently: true });
+    // Canvas overlay for animation (low-res Voronoi dots)
+    const CW = 200, CH = Math.round(200 * img.naturalHeight / img.naturalWidth);
+    lc.width = CW; lc.height = CH;
+    lc.style.position = 'absolute';
+    lc.style.inset = '0';
+    lc.style.width = '100%';
+    lc.style.height = '100%';
+    lc.style.mixBlendMode = 'multiply'; // blends dark dots with logo
+    lc.style.opacity = '0.18';
 
-    // Draw image with brightness filter, read pixels
-    const src = document.createElement('canvas');
-    src.width = W; src.height = H;
-    const sCtx = src.getContext('2d', { willReadFrequently: true });
-    sCtx.filter = 'brightness(' + P.brightness + ')';
-    sCtx.drawImage(img, 0, 0, W, H);
-    sCtx.filter = 'none';
-    const px = sCtx.getImageData(0, 0, W, H).data;
+    const lCtx = lc.getContext('2d');
+    // Set wrap height to match img aspect
+    wrap.style.aspectRatio = img.naturalWidth + '/' + img.naturalHeight;
 
-    // Build grayscale + gamma array
-    const gray = new Float32Array(W * H);
-    for (let i = 0; i < gray.length; i++) {
-      const p = i * 4;
-      let l = px[p]*0.299 + px[p+1]*0.587 + px[p+2]*0.114;
-      gray[i] = 255 * Math.pow(l/255, P.gamma);
-    }
+    // Animation — only texIntensity and texScale animate, very subtly
+    let curI = 0.85, curS = 4.0;
+    let t = 0, rafId = null, last = 0;
+    const isMobile = 'ontouchstart' in window;
+    const INTERVAL = isMobile ? 1000/12 : 1000/18;
+    const LERP = 0.02;
+    const step = 8; // dot grid step in low-res canvas
 
-    // Floyd-Steinberg on gray
-    function buildMask() {
-      const buf = new Float32Array(gray);
-      const out = new Uint8Array(W * H);
-      const k = [[1,0,7/16],[-1,1,3/16],[0,1,5/16],[1,1,1/16]];
-      for (let y=0;y<H;y++) for (let x=0;x<W;x++) {
-        const i=y*W+x, old=buf[i], nw=old<P.threshold?0:255;
-        out[i] = nw===0 ? 1 : 0;
-        const err=old-nw;
-        for (const [dx,dy,w] of k) {
-          const nx=x+dx,ny=y+dy;
-          if(nx>=0&&nx<W&&ny>=0&&ny<H) buf[ny*W+nx]+=err*w;
-        }
-      }
-      return out;
-    }
-
-    const mask = buildMask();
-
-    // Collect grid cells — simple regular grid over the image
-    const step = P.stepSize;
-    const SHAPES = ['square','circle'];
-    const cells = [];
-
-    for (let cy=step/2; cy<H; cy+=step) {
-      for (let cx=step/2; cx<W; cx+=step) {
-        const ix=Math.round(cx), iy=Math.round(cy);
-        if (ix<0||ix>=W||iy<0||iy>=H) continue;
-        // Sample a small area average for stability
-        let sum=0, count=0;
-        const r2=Math.floor(step/2);
-        for (let sy=iy-r2;sy<=iy+r2;sy++) for (let sx=ix-r2;sx<=ix+r2;sx++) {
-          if(sx>=0&&sx<W&&sy>=0&&sy<H) { sum+=mask[sy*W+sx]; count++; }
-        }
-        if (sum/count < 0.35) continue; // skip mostly white cells
-
-        const lum = gray[iy*W+ix];
-        const col = Math.round(cx/step), row = Math.round(cy/step);
-        const shIdx = (col+row) % 2;
-        cells.push({ x: cx, y: cy, lum, shIdx });
-      }
-    }
-
-    // Render one frame
-    function renderFrame(texIntensity, texScale) {
-      lCtx.clearRect(0,0,W,H);
+    function renderOverlay(texIntensity, texScale) {
+      lCtx.clearRect(0, 0, CW, CH);
       lCtx.fillStyle = '#ffffff';
-      lCtx.fillRect(0,0,W,H);
+      lCtx.fillRect(0, 0, CW, CH);
       lCtx.fillStyle = '#1a1a1a';
       lCtx.beginPath();
 
-      for (const c of cells) {
-        const v = voronoiDist(c.x/W, c.y/H, texScale);
-        const texF = Math.max(0.05, 1 + (v*2-1)*texIntensity);
-
-        const baseR = P.luminanceSize
-          ? Math.max(P.minShapeSize, Math.min(P.maxShapeSize,
-              P.maxShapeSize - (c.lum/255)*(P.maxShapeSize-P.minShapeSize)))
-          : P.shapeSize;
-        const r = Math.max(0.4, baseR * texF);
-
-        const shape = c.shIdx === 0 ? 'square' : 'circle';
-        if (shape === 'circle') {
-          lCtx.moveTo(c.x+r, c.y);
-          lCtx.arc(c.x, c.y, r, 0, Math.PI*2);
-        } else {
-          const cr = Math.min(P.cornerRadius, r);
-          const x=c.x-r, y=c.y-r, w=r*2;
-          if (cr <= 0) {
-            lCtx.rect(x, y, w, w);
-          } else {
-            lCtx.moveTo(x+cr,y); lCtx.lineTo(x+w-cr,y);
-            lCtx.arcTo(x+w,y,x+w,y+cr,cr); lCtx.lineTo(x+w,y+w-cr);
-            lCtx.arcTo(x+w,y+w,x+w-cr,y+w,cr); lCtx.lineTo(x+cr,y+w);
-            lCtx.arcTo(x,y+w,x,y+w-cr,cr); lCtx.lineTo(x,y+cr);
-            lCtx.arcTo(x,y,x+cr,y,cr); lCtx.closePath();
-          }
+      for (let cy = step/2; cy < CH; cy += step) {
+        for (let cx = step/2; cx < CW; cx += step) {
+          const v = voronoiDist(cx/CW, cy/CH, texScale);
+          const f = Math.max(0.05, 1 + (v*2-1)*texIntensity);
+          const r = Math.max(0.3, 1.8 * f);
+          lCtx.moveTo(cx+r, cy);
+          lCtx.arc(cx, cy, r, 0, Math.PI*2);
         }
       }
       lCtx.fill();
     }
 
-    // Animation — only texIntensity and texScale move, very subtly
-    let curI = P.texIntensity, curS = P.texScale;
-    let t = 0, rafId = null, last = 0;
-    const isMobile = 'ontouchstart' in window;
-    const INTERVAL = isMobile ? 1000/14 : 1000/20;
-    const LERP = 0.018; // very slow approach
-
     function animate(ts) {
       rafId = requestAnimationFrame(animate);
       if (ts - last < INTERVAL) return;
       last = ts;
-      t += 0.004; // extremely slow time
+      t += 0.004;
 
-      // Targets oscillate very subtly around preset values
-      const tgtI = P.texIntensity + Math.sin(t * 0.5) * 0.12;
-      const tgtS = P.texScale     + Math.sin(t * 0.31 + 1.1) * 0.6;
-
+      // Very subtle oscillation around preset values
+      const tgtI = 0.85 + Math.sin(t * 0.5) * 0.12;
+      const tgtS = 4.0  + Math.sin(t * 0.31 + 1.1) * 0.6;
       curI += (tgtI - curI) * LERP;
       curS += (tgtS - curS) * LERP;
 
-      renderFrame(curI, curS);
+      renderOverlay(curI, curS);
     }
 
     rafId = requestAnimationFrame(animate);
 
-    // Pause when tool opens
     const tool = document.getElementById('tool-screen');
     new MutationObserver(() => {
       if (tool.classList.contains('visible')) {
