@@ -1337,6 +1337,23 @@ input[type="range"]::-webkit-slider-thumb {
             <option value="soft-light">Soft Light</option>
           </select>
         </div>
+
+        <div class="section-title">Texture</div>
+        <div class="tool-note">El "Texture" real de Figma: difumina el borde del shape (Radius) y lo "dithereá" con umbral random a una granularidad (Size X/Y) — el polvo se dispersa solo en el borde, el interior queda intacto. Distinto al Noise de arriba. Se puede usar solo, o apilado encima del Noise.</div>
+        <div class="toggle-row" id="toggle-noise-texture"><div class="tog" id="noise-texture-ind">&nbsp;</div> Activar Texture</div>
+        <div id="noise-texture-wrap" style="display:none">
+          <div class="row" style="display:flex;gap:10px">
+            <div style="flex:1">
+              <div class="row-top"><label>Size X</label><input type="number" id="num-noise-texture-size-x" value="1" min="1" max="40" step="1"></div>
+              <input type="range" id="noise-texture-size-x" min="1" max="40" step="1" value="1">
+            </div>
+            <div style="flex:1">
+              <div class="row-top"><label>Size Y</label><input type="number" id="num-noise-texture-size-y" value="1" min="1" max="40" step="1"></div>
+              <input type="range" id="noise-texture-size-y" min="1" max="40" step="1" value="1">
+            </div>
+          </div>
+          <div class="row"><div class="row-top"><label>Radius</label><input type="number" id="num-noise-texture-radius" value="90" min="0" max="250" step="1"></div><input type="range" id="noise-texture-radius" min="0" max="250" step="1" value="90"></div>
+        </div>
       </div>
 
       <div class="tab-content" id="tab-export">
@@ -1531,6 +1548,10 @@ const S = {
   noiseColorB: '#ffffff',
   noiseBackground: 'color',
   noiseBgColor: '#ffffff',
+  noiseTextureEnabled: false,
+  noiseTextureSizeX: 1,
+  noiseTextureSizeY: 1,
+  noiseTextureRadius: 90,
 
   // Global Grain overlay — applies on top of ANY tool's render, regardless
   // of which mode is active.
@@ -1599,6 +1620,8 @@ const CONTROL_MAP = [
   ['glitch-detect-coverage','glitchDetectCoverage'],
   ['glitch-line-width','glitchLineWidth'], ['glitch-font-size','glitchFontSize'],
   ['noise-size','noiseSize'], ['noise-density','noiseDensity'], ['noise-opacity','noiseOpacity'],
+  ['noise-texture-size-x','noiseTextureSizeX'], ['noise-texture-size-y','noiseTextureSizeY'],
+  ['noise-texture-radius','noiseTextureRadius'],
   ['grain-size','grainSize'], ['grain-density','grainDensity'], ['grain-opacity','grainOpacity'],
   ['jpg-quality','jpgQuality']
 ];
@@ -1909,6 +1932,13 @@ $('toggle-glitch-show-labels').addEventListener('click', () => {
 $('toggle-noise-effect').addEventListener('click', () => {
   S.noiseShowEffect = !S.noiseShowEffect;
   $('noise-effect-ind').innerHTML = S.noiseShowEffect ? '&#10003;' : '&nbsp;';
+  scheduleRender();
+});
+
+$('toggle-noise-texture').addEventListener('click', () => {
+  S.noiseTextureEnabled = !S.noiseTextureEnabled;
+  $('noise-texture-ind').innerHTML = S.noiseTextureEnabled ? '&#10003;' : '&nbsp;';
+  $('noise-texture-wrap').style.display = S.noiseTextureEnabled ? 'block' : 'none';
   scheduleRender();
 });
 
@@ -3170,6 +3200,119 @@ function applyGrainOverlay(targetCtx, cw, ch) {
   targetCtx.restore();
 }
 
+// Figma's "Texture" effect is fundamentally an edge-dissolve, not a flat
+// overlay: it feathers the shape's alpha by Radius, then dithers that
+// feathered gradient with a random threshold at Size X/Y granularity. The
+// dissolve only becomes visible where the blur actually created a gradient
+// (i.e. near edges) — solid interior and solid background resolve back to
+// themselves almost every time, since a value near 0 or 255 rarely crosses
+// a random 0-255 threshold. That's why the screenshots show dust only
+// around the boundary, with the flat fill untouched.
+//
+// We don't have a real alpha channel most of the time (the canvas is
+// opaque), so we build a luminance-based foreground/background mask first
+// (dark = foreground), feather THAT, and dither it the same way — then
+// recolor only the pixels that actually fall inside the feathered band,
+// leaving solid interior/exterior pixels completely untouched so any
+// existing color or detail there survives.
+
+function fastBoxBlur(values, w, h, radius) {
+  // Box blur via a summed-area (integral) table — cost is O(w*h) to build
+  // and O(1) per pixel to query, regardless of how large radius is. A
+  // separable multi-pass blur (like the project's existing gaussianBlur)
+  // would scale with radius, and Figma's Texture wants radius values up
+  // around 90+ by default, so this is the version that stays fast there.
+  const r = Math.max(0, Math.round(radius));
+  if (r <= 0) return values;
+
+  const iw = w + 1, ih = h + 1;
+  const integral = new Float64Array(iw * ih);
+
+  for (let y = 0; y < h; y++) {
+    const rowSrc = y * w;
+    const rowCur = (y + 1) * iw;
+    const rowPrev = y * iw;
+    for (let x = 0; x < w; x++) {
+      integral[rowCur + x + 1] = values[rowSrc + x] + integral[rowPrev + x + 1] + integral[rowCur + x] - integral[rowPrev + x];
+    }
+  }
+
+  const out = new Float32Array(w * h);
+  for (let y = 0; y < h; y++) {
+    const y0 = Math.max(0, y - r);
+    const y1 = Math.min(h - 1, y + r);
+    const rowOut = y * w;
+    for (let x = 0; x < w; x++) {
+      const x0 = Math.max(0, x - r);
+      const x1 = Math.min(w - 1, x + r);
+      const area = (x1 - x0 + 1) * (y1 - y0 + 1);
+      const sum = integral[(y1 + 1) * iw + (x1 + 1)] - integral[y0 * iw + (x1 + 1)] - integral[(y1 + 1) * iw + x0] + integral[y0 * iw + x0];
+      out[rowOut + x] = sum / area;
+    }
+  }
+
+  return out;
+}
+
+function applyTextureOverlay(targetCtx, cw, ch, sizeX, sizeY, radius) {
+  if (radius <= 0) return; // matches Figma: zero Radius = no feathered band = nothing to dither
+
+  const imgData = targetCtx.getImageData(0, 0, cw, ch);
+  const d = imgData.data;
+  const n = cw * ch;
+  const mask = new Float32Array(n); // 255 = foreground (dark), 0 = background (light)
+
+  let fgR = 0, fgG = 0, fgB = 0, fgCount = 0;
+  let bgR = 0, bgG = 0, bgB = 0, bgCount = 0;
+
+  for (let i = 0; i < n; i++) {
+    const p = i * 4;
+    const lum = d[p] * 0.299 + d[p + 1] * 0.587 + d[p + 2] * 0.114;
+    if (lum < 128) {
+      mask[i] = 255;
+      fgR += d[p]; fgG += d[p + 1]; fgB += d[p + 2]; fgCount++;
+    } else {
+      bgR += d[p]; bgG += d[p + 1]; bgB += d[p + 2]; bgCount++;
+    }
+  }
+
+  const fg = fgCount ? [fgR / fgCount, fgG / fgCount, fgB / fgCount] : [26, 26, 26];
+  const bg = bgCount ? [bgR / bgCount, bgG / bgCount, bgB / bgCount] : [255, 255, 255];
+
+  const blurredMask = fastBoxBlur(mask, cw, ch, radius);
+
+  const sx = Math.max(1, Math.round(sizeX));
+  const sy = Math.max(1, Math.round(sizeY));
+  const EPS = 2; // values this close to 0 or 255 are treated as "solid", not edge
+
+  for (let by = 0; by < ch; by += sy) {
+    const yEnd = Math.min(ch, by + sy);
+    const cy = Math.min(ch - 1, by + (sy >> 1));
+
+    for (let bx = 0; bx < cw; bx += sx) {
+      const cx = Math.min(cw - 1, bx + (sx >> 1));
+      const m = blurredMask[cy * cw + cx];
+
+      // Solid interior or solid exterior — leave these pixels exactly as
+      // rendered, no recoloring at all.
+      if (m <= EPS || m >= 255 - EPS) continue;
+
+      const isFg = Math.random() * 255 < m;
+      const c = isFg ? fg : bg;
+      const xEnd = Math.min(cw, bx + sx);
+
+      for (let py = by; py < yEnd; py++) {
+        for (let px = bx; px < xEnd; px++) {
+          const p = (py * cw + px) * 4;
+          d[p] = c[0]; d[p + 1] = c[1]; d[p + 2] = c[2]; d[p + 3] = 255;
+        }
+      }
+    }
+  }
+
+  targetCtx.putImageData(imgData, 0, 0);
+}
+
 async function renderNoise(myID) {
   const cw = S.canvasW;
   const ch = S.canvasH;
@@ -3186,20 +3329,23 @@ async function renderNoise(myID) {
     ctx.fillRect(0, 0, cw, ch);
   }
 
-  if (!S.noiseShowEffect) {
-    spinner.classList.remove('visible');
-    return;
+  if (S.noiseShowEffect) {
+    await yieldFrame();
+    if (myID !== currentRenderID) return;
+
+    const grain = buildGrainCanvas(cw, ch, S.noiseSize, S.noiseDensity, S.noiseType, S.noiseColorA, S.noiseColorB);
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, Math.min(1, S.noiseOpacity / 100));
+    ctx.globalCompositeOperation = blendModeToComposite(S.noiseBlend);
+    ctx.drawImage(grain, 0, 0, cw, ch);
+    ctx.restore();
   }
 
-  await yieldFrame();
-  if (myID !== currentRenderID) return;
-
-  const grain = buildGrainCanvas(cw, ch, S.noiseSize, S.noiseDensity, S.noiseType, S.noiseColorA, S.noiseColorB);
-  ctx.save();
-  ctx.globalAlpha = Math.max(0, Math.min(1, S.noiseOpacity / 100));
-  ctx.globalCompositeOperation = blendModeToComposite(S.noiseBlend);
-  ctx.drawImage(grain, 0, 0, cw, ch);
-  ctx.restore();
+  if (S.noiseTextureEnabled) {
+    await yieldFrame();
+    if (myID !== currentRenderID) return;
+    applyTextureOverlay(ctx, cw, ch, S.noiseTextureSizeX, S.noiseTextureSizeY, S.noiseTextureRadius);
+  }
 
   spinner.classList.remove('visible');
 }
@@ -4750,6 +4896,7 @@ const PRESET_KEYS = {
               'blur','contrast','brightness','gamma','invert', ...GRAIN_PRESET_KEYS],
   noise:     ['noiseShowEffect','noiseType','noiseSize','noiseDensity','noiseOpacity','noiseBlend',
               'noiseColorA','noiseColorB','noiseBackground','noiseBgColor',
+              'noiseTextureEnabled','noiseTextureSizeX','noiseTextureSizeY','noiseTextureRadius',
               'blur','contrast','brightness','gamma','invert', ...GRAIN_PRESET_KEYS],
 };
 
@@ -4877,6 +5024,7 @@ function applyLoadedPreset(preset) {
   syncToggle('glitch-show-grid-ind', S.glitchShowGrid);
   syncToggle('glitch-show-labels-ind', S.glitchShowLabels);
   syncToggle('noise-effect-ind', S.noiseShowEffect);
+  syncToggle('noise-texture-ind', S.noiseTextureEnabled);
   syncToggle('grain-enabled-ind', S.grainEnabled);
 
   // Sync dependent visibility
@@ -4901,6 +5049,7 @@ function applyLoadedPreset(preset) {
   if ($('noise-image-note')) $('noise-image-note').style.display = S.noiseBackground === 'image' ? 'block' : 'none';
   if ($('grain-duotone-wrap')) $('grain-duotone-wrap').style.display = S.grainType === 'duotone' ? 'block' : 'none';
   if ($('grain-params-wrap')) $('grain-params-wrap').style.display = S.grainEnabled ? 'block' : 'none';
+  if ($('noise-texture-wrap')) $('noise-texture-wrap').style.display = S.noiseTextureEnabled ? 'block' : 'none';
   if ($('noise-blend-select')) $('noise-blend-select').value = S.noiseBlend;
   if ($('grain-blend-select')) $('grain-blend-select').value = S.grainBlend;
   if ($('noise-color-a')) $('noise-color-a').value = S.noiseColorA;
